@@ -171,53 +171,6 @@ static int check_phone_equal (nameinfo_t name, char *word, options_t options)
 	return (TEXT_ERROR);
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-
-
-
-
-
-
-
-
-
-
-
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Öffentliche Funktionen
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Liest Daten von stdin ein und gibt Pointer darauf zurück.
-// Bei Problemen mit Speicheranforderung wird NULL zurückgegeben
-char *read_stdin(void)
-{
-	char	buffer[READBUFFER_LEN];
-	size_t	data_len = 1;
-	char	*data = malloc(sizeof(char) * READBUFFER_LEN);
-
-	if (data == NULL) return (NULL);
-
-	// Über Puffer Eingabe von stdin lesen und komplett in daten speichern
-	data[0]='\0';
-	while (fgets(buffer, READBUFFER_LEN, stdin)) {
-		char *old = data;
-		data_len += strlen(buffer);
-		data=realloc(data, data_len);
-		if(data == NULL) {
-			free(old);
-			return (NULL);
-		}
-		strcat(data, buffer);
-	}
-	
-	if (ferror(stdin)) {
-		free(data);
-		return (NULL);
-	}
-	
-	return (data);
-}
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Holt das nächste gültige Wort aus "text_data" und gibt TEXT_OK zurück
 // Falls als nächstes kein Wort sondern ein "verbotenes" / nicht deutsches Zeichen kommt
 // Wird das Zeichen allein zurückgegeben (plus Nullbyte) und Rückgabe = TEXT_ERROR
@@ -226,7 +179,7 @@ char *read_stdin(void)
 // Rückgabe:	Wort
 //				TEXT_OK oder TEXT_ERROR
 //				aktualisiert auch txtposcnt wenn kein NULL-Zeiger übergeben
-int get_word (char *text_data, char *word, long *txtposcnt)
+static int get_word (char *text_data, char *word, long *txtposcnt)
 {
 	const uml_t		ul_list[] = {{"Ä"}, {"Ö"}, {"Ü"}, {"ä"}, {"ö"}, {"ü"}, {"ß"}};
 	static long		cnt=0;
@@ -278,6 +231,53 @@ int get_word (char *text_data, char *word, long *txtposcnt)
 		cnt++;
 		return (TEXT_ERROR);
 	}
+}
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+
+
+
+
+
+
+
+
+
+
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Öffentliche Funktionen
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Liest Daten von stdin ein und gibt Pointer darauf zurück.
+// Bei Problemen mit Speicheranforderung wird NULL zurückgegeben
+char *read_stdin(void)
+{
+	char	buffer[READBUFFER_LEN];
+	size_t	data_len = 1;
+	char	*data = malloc(sizeof(char) * READBUFFER_LEN);
+
+	if (data == NULL) return (NULL);
+
+	// Über Puffer Eingabe von stdin lesen und komplett in daten speichern
+	data[0]='\0';
+	while (fgets(buffer, READBUFFER_LEN, stdin)) {
+		char *old = data;
+		data_len += strlen(buffer);
+		data=realloc(data, data_len);
+		if(data == NULL) {
+			free(old);
+			return (NULL);
+		}
+		strcat(data, buffer);
+	}
+	
+	if (ferror(stdin)) {
+		free(data);
+		return (NULL);
+	}
+	
+	return (data);
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Namen überprüfen ob gültige deutsche Worte,

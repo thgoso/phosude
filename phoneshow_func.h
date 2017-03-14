@@ -31,9 +31,8 @@ typedef struct {
 
 
 
-// Funktionen zum Einlesen der Daten von stdin
+// Funktion zum Einlesen der Daten von stdin
 char *read_stdin		(void);
-int	get_word			(char *text_data, char *word, long *txtposcnt);
 // Prüffunktion für Namensliste
 int	check_names_list	(nameinfo_t names_list[], int number_of_names, options_t options);
 // Ausgabefunktionen
