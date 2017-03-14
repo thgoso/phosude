@@ -1,31 +1,25 @@
 #ifndef PHONESHOW_FUNC
 #define PHONESHOW_FUNC
 
-//Option Ein/Aus (-k -p -s -e usw.)
-#define OP_EIN 1
-#define OP_AUS 0
-//Max. länge Farbstring
-#define FARB_STRING_LAENGE 16
-//Puffergröße beim lesen von stdin
-#define PUFFER_GROESSE 512
-//Levenshtein Dist.
-#define MIN3(a, b, c) ((a) < (b) ? ((a) < (c) ? (a) : (c)) : ((b) < (c) ? (b) : (c)))
+// Option Ein/Aus (-k -p -s -e usw.)
+#define OP_ON 				1
+#define OP_OFF 				0
+// Max. Länge Colorstring
+#define COLORSTRING_LEN 	16
 
-//Für je einen übergebenen Namen
-typedef struct
-{
-	char	Name[MAX_WORT_LAENGE];
-	int	Ist_Minusname;
-	char	Code_k[MAX_WORT_LAENGE];
-	char	Code_p[MAX_WORT_LAENGE];
-	char	Code_s[MAX_WORT_LAENGE];
-	char	Code_e[MAX_WORT_LAENGE];
-	char	Farbstring[FARB_STRING_LAENGE];
-} NAME_FORM;
+// Für je einen übergebenen Namen
+typedef struct {
+	char	Name[MAX_WORD_LEN];
+	int		Is_Minusname;
+	char	Code_k[MAX_WORD_LEN];
+	char	Code_p[MAX_WORD_LEN];
+	char	Code_s[MAX_WORD_LEN];
+	char	Code_e[MAX_WORD_LEN];
+	char	Colorstring[COLORSTRING_LEN];
+} nameinfo_t;
 
-//Für Optionen
-typedef struct
-{
+// Für Optionen
+typedef struct {
 	int	k;
 	int	p;
 	int	s;
@@ -33,20 +27,22 @@ typedef struct
 	int	l;
 	int	n;
 	int	f;
-} OPT_FORM;
+} options_t;
 
-//Prototypen
-char	*lies_eingabe		(void);
-int	levenshtein		(char *s1, char *s2);
-int	hole_wort		(char *textdaten, char *wort, long *txtposcnt);
-int	pruefe_phongleich	(NAME_FORM name, char *wort, OPT_FORM optionen);
-int	pruefe_namen_liste	(NAME_FORM namen_liste[], int anz_namen, OPT_FORM optionen);
-int	ausgabe_a		(NAME_FORM namen_liste[], int anz_namen, OPT_FORM optionen, char *textdaten);
-int	ausgabe_z		(NAME_FORM namen_liste[], int anz_namen, OPT_FORM optionen, char *textdaten);
-int	ausgabe_w		(NAME_FORM namen_liste[], int anz_namen, OPT_FORM optionen, char *textdaten);
-int	ausgabe_c		(NAME_FORM namen_liste[], int anz_namen, OPT_FORM optionen, char *textdaten);
-int	ausgabe_x		(NAME_FORM namen_liste[], int anz_namen, OPT_FORM optionen, char *textdaten);
-void	zeige_legende		(NAME_FORM namen_liste[], int anz_namen, OPT_FORM optionen, long funde);
+
+
+// Funktionen zum Einlesen der Daten von stdin
+char *read_stdin		(void);
+int	get_word			(char *text_data, char *word, long *txtposcnt);
+// Prüffunktion für Namensliste
+int	check_names_list	(nameinfo_t names_list[], int number_of_names, options_t options);
+// Ausgabefunktionen
+int	outmode_a			(nameinfo_t names_list[], int number_of_names, options_t options, char *text_data);
+int	outmode_z			(nameinfo_t names_list[], int number_of_names, options_t options, char *text_data);
+int	outmode_w			(nameinfo_t names_list[], int number_of_names, options_t options, char *text_data);
+int	outmode_c			(nameinfo_t names_list[], int number_of_names, options_t options, char *text_data);
+int	outmode_x			(nameinfo_t names_list[], int number_of_names, options_t options, char *text_data);
+
 
 #endif //PHONESHOW_FUNC
 

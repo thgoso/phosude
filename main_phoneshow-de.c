@@ -3,25 +3,25 @@ phoneshow-de
 Führt eine Phonetische Suche in einer Textdatei aus
 Suchverfahren sind:
 Kölner Phonetik		für deutsche Namen nach eigener Erfahrung am optimalsten
-			Code Numerisch, variable Länge
-Phonem			in versch. dBase Varianten implementiert
-			Code Buchstaben, variable Länge
-Soundex			Für deutsche Namen nicht ganz geeignet, aber Standard bei Genealogie(programmen)
-			Alphanumerischer Code, fixe Länge, Format Buchstabe gefolgt von 3 Ziffern
+					Code Numerisch, variable Länge
+Phonem				in versch. dBase Varianten implementiert
+					Code Buchstaben, variable Länge
+Soundex				Für deutsche Namen nicht ganz geeignet, aber Standard bei Genealogie(programmen)
+					Alphanumerischer Code, fixe Länge, Format Buchstabe gefolgt von 3 Ziffern
 Extended Soundex	Erweiterung von Soundex
-			Numerischer Code, fixe Länge, 5 Ziffern
+					Numerischer Code, fixe Länge, 5 Ziffern
 
 
-			Copyright (C) 2015, Thomas Gollmer, th_goso@freenet.de
-			Dieses Programm ist freie Software. Sie können es unter den Bedingungen der GNU General Public License,
-			wie von der Free Software Foundation veröffentlicht, weitergeben und/oder modifizieren,
-			entweder gemäß Version 3 der Lizenz oder (nach Ihrer Option) jeder späteren Version.
+Copyright (C) 2015, Thomas Gollmer, th_goso@freenet.de
+Dieses Programm ist freie Software. Sie können es unter den Bedingungen der GNU General Public License,
+wie von der Free Software Foundation veröffentlicht, weitergeben und/oder modifizieren,
+entweder gemäß Version 3 der Lizenz oder (nach Ihrer Option) jeder späteren Version.
 
-			Die Veröffentlichung dieses Programms erfolgt in der Hoffnung, daß es Ihnen von Nutzen sein wird,
-			aber OHNE IRGENDEINE GARANTIE, sogar ohne die implizite Garantie der
-			MARKTREIFE oder der VERWENDBARKEIT FÜR EINEN BESTIMMTEN ZWECK.
-			Details finden Sie in der GNU General Public License. Sie sollten ein Exemplar der GNU General Public License
-			zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.org/licenses/>.
+Die Veröffentlichung dieses Programms erfolgt in der Hoffnung, daß es Ihnen von Nutzen sein wird,
+aber OHNE IRGENDEINE GARANTIE, sogar ohne die implizite Garantie der
+MARKTREIFE oder der VERWENDBARKEIT FÜR EINEN BESTIMMTEN ZWECK.
+Details finden Sie in der GNU General Public License. Sie sollten ein Exemplar der GNU General Public License
+zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
@@ -30,24 +30,22 @@ Extended Soundex	Erweiterung von Soundex
 #include "basis_func.h"
 #include "phoneshow_func.h"
 
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-//passend zum Fehlercode wird ein Text ausgegeben
-void zeige_fehler(int fehlercode)
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// passend zum Fehlercode wird ein Text ausgegeben
+static void show_error (int err_no)
 {
-	if (fehlercode == TEXT_ZU_KURZ) fprintf(stderr, "zu kurz zur sinnvollen Suche !\n");
-	else if (fehlercode == TEXT_NICHT_OK) fprintf(stderr, "enthält unzulässige Zeichen !\n");
-	else if (fehlercode == TEXT_KEIN_CODE) fprintf(stderr, "erzeugt keinen gültigen phonetischen Code !\n");
-	else if (fehlercode == TEXT_UNDEFINIERT)
-	{
-	fprintf(stderr, "Falsche Aufrufparameter !\n"
-			"Aufruf:    phoneshow-de [Optionen] Name[n] [_Name[n]]\n"
-			"Hilfe:     phoneshow-de -h\n"
-			"Beispiele: phoneshow-de -b\n\n");
+	if (err_no == TEXT_TO_SHORT) fprintf(stderr, "zu kurz zur sinnvollen Suche !\n");
+	else if (err_no == TEXT_ERROR) fprintf(stderr, "enthält unzulässige Zeichen !\n");
+	else if (err_no == TEXT_NO_CODE) fprintf(stderr, "erzeugt keinen gültigen phonetischen Code !\n");
+	else if (err_no == TEXT_UNDEF) {
+		fprintf(stderr, "Falsche Aufrufparameter !\n"
+		"Aufruf:    phoneshow-de [Optionen] Name[n] [_Name[n]]\n"
+		"Hilfe:     phoneshow-de -h\n"
+		"Beispiele: phoneshow-de -b\n\n");
 	}
 }
-
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-void zeige_hilfe(void)
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+static void show_help (void)
 {
 	printf(
 	"\n\033[1mphoneshow-de     Phonetische Suche von Namen/Wörtern in Text\033[m\n"
@@ -87,11 +85,10 @@ void zeige_hilfe(void)
 	"               %d wenn auf Grund des Namens keine kodierung erfolgt z.B. phoneshow-de -p Aahe\n"
         "               %d wenn kein phonetisch ähnlicher Name im Text gefunden wurde\n"
 	"               %d wenn es bei Speicheranfordeung zu Problemen kam\n\n",
-	TEXT_OK, TEXT_NICHT_OK, TEXT_UNDEFINIERT, TEXT_ZU_KURZ, TEXT_KEIN_CODE, TEXT_UNGLEICH, MEM_ERR);
+	TEXT_OK, TEXT_ERROR, TEXT_UNDEF, TEXT_TO_SHORT, TEXT_NO_CODE, TEXT_NOT_EQUAL, MEM_ERR);
 }
-
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-void zeige_beispiele(void)
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+static void show_examples (void)
 {
 	printf(
 	"\n\033[1mphoneshow-de Phonetische Suche von Namen/Wörtern in Text\033[m\n"
@@ -146,130 +143,123 @@ void zeige_beispiele(void)
 	"Es wird der volle Seitentext angezeigt und ähnlich klingende Namen wie Czerny werden markiert.\n"
 	"Phonetische Suchverfahren = Kölner Phonetik und Phonem.\n\n");
 }
-
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-int main(int argc, char* argv[])
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+int main (int argc, char* argv[])
 {
-	int		cnt;
-	int		rv=0;
-	int		idxstart;
-	int		idxend;
-	int		anz_namen;
-	char		*textdaten;		//Pointer auf übergebene Textdaten von stdin
-	int		op_a=OP_AUS;		//Optionen
-	int		op_z=OP_AUS;		//Anzeige
-	int		op_w=OP_AUS;		//Modes
-	int		op_c=OP_AUS;
-	int		op_x=OP_AUS;
-	NAME_FORM	*namen_liste;		//Struct Sammlung Namen
-	OPT_FORM	optionen;		//Struct Sammlung Optionen Phonetik
-			optionen.k=OP_AUS;
-			optionen.p=OP_AUS;
-			optionen.s=OP_AUS;
-			optionen.e=OP_AUS;
-			optionen.n=OP_AUS;
-			optionen.f=OP_EIN;
-			optionen.l=0;
+	int			cnt;
+	int			retval=0;
+	int			idxstart;
+	int			idxend;
+	int			number_of_names;
+	char		*text_data;
+	nameinfo_t	*names_list;
+	
+	// Übergabeparameter (k,p,s,e,l,n,f)
+	options_t	options = {OP_OFF, OP_OFF, OP_OFF, OP_OFF, 0, OP_OFF, OP_ON};
+
+	// Übergabeparameter (a,z,w,c,x) [Ausgabeformat]
+	struct {
+		int a;
+		int	z;
+		int	w;
+		int	c;
+		int	x;
+	} outops = {OP_OFF, OP_OFF, OP_OFF, OP_OFF, OP_OFF};
+	
+
+	
+	
 
 
-	//Wenn keine Übergabeparameter Ende
-	if (argc == 1)
-	{
-		zeige_fehler (TEXT_UNDEFINIERT);
-		return (TEXT_UNDEFINIERT);
+	// Wenn keine Übergabeparameter Ende
+	if (argc == 1) {
+		show_error (TEXT_UNDEF);
+		return (TEXT_UNDEF);
 	}
 
-	//Optionen aus Übergabe lesen und die Vars danach setzten
-	for (cnt=1; cnt < argc; cnt++)
-	{
-		if (strcmp (argv[cnt], "-k") == 0)optionen.k = OP_EIN;
-		else if (strcmp (argv[cnt], "-p") == 0)optionen.p = OP_EIN;
-		else if (strcmp (argv[cnt], "-s") == 0)optionen.s = OP_EIN;
-		else if (strcmp (argv[cnt], "-e") == 0)optionen.e = OP_EIN;
-		else if (strcmp (argv[cnt], "-n") == 0)optionen.n = OP_EIN;
-		else if (strcmp (argv[cnt], "-f") == 0)optionen.f = OP_AUS;
-		else if (strcmp (argv[cnt], "-l") == 0)optionen.l++;
-		else if (strcmp (argv[cnt], "-a") == 0)op_a = OP_EIN;
-		else if (strcmp (argv[cnt], "-z") == 0)op_z = OP_EIN;
-		else if (strcmp (argv[cnt], "-w") == 0)op_w = OP_EIN;
-		else if (strcmp (argv[cnt], "-c") == 0)op_c = OP_EIN;
-		else if (strcmp (argv[cnt], "-x") == 0)op_x = OP_EIN;
-		else if (strcmp (argv[cnt], "-h") == 0)
-		{
-			zeige_hilfe();
+	// Optionen aus Übergabe lesen und die Vars danach setzten
+	for (cnt=1; cnt < argc; cnt++) {
+		if (strcmp (argv[cnt], "-k") == 0)options.k = OP_ON;
+		else if (strcmp (argv[cnt], "-p") == 0)options.p = OP_ON;
+		else if (strcmp (argv[cnt], "-s") == 0)options.s = OP_ON;
+		else if (strcmp (argv[cnt], "-e") == 0)options.e = OP_ON;
+		else if (strcmp (argv[cnt], "-n") == 0)options.n = OP_ON;
+		else if (strcmp (argv[cnt], "-f") == 0)options.f = OP_OFF;
+		else if (strcmp (argv[cnt], "-l") == 0)options.l++;
+		else if (strcmp (argv[cnt], "-a") == 0)outops.a = OP_ON;
+		else if (strcmp (argv[cnt], "-z") == 0)outops.z = OP_ON;
+		else if (strcmp (argv[cnt], "-w") == 0)outops.w = OP_ON;
+		else if (strcmp (argv[cnt], "-c") == 0)outops.c = OP_ON;
+		else if (strcmp (argv[cnt], "-x") == 0)outops.x = OP_ON;
+		else if (strcmp (argv[cnt], "-h") == 0) {
+			show_help();
 			return 0;
 		}
-		else if (strcmp (argv[cnt], "-b") == 0)
-		{
-			zeige_beispiele();
+		else if (strcmp (argv[cnt], "-b") == 0) {
+			show_examples();
 			return 0;
 		}
 		else break;
 	}
 
-	//Wenn kein Anzeigeparameter übergeben -a -z -w -c -x
-	//-z einschalten
-	if (op_a == OP_AUS && op_z == OP_AUS && op_w == OP_AUS && op_c == OP_AUS && op_x == OP_AUS) op_z = OP_EIN;
+	// Wenn kein Anzeigeparameter übergeben -a -z -w -c -x
+	// -z einschalten
+	if (outops.a==OP_OFF && outops.z==OP_OFF && outops.w==OP_OFF && outops.c==OP_OFF && outops.x==OP_OFF) outops.z = OP_ON;
 
-	//Keine Namen übergeben = Fehler
-	if (cnt == argc)
-	{
-		zeige_fehler (TEXT_UNDEFINIERT);
-		return (TEXT_UNDEFINIERT);
+	// Keine Namen übergeben = Fehler
+	if (cnt == argc) {
+		show_error (TEXT_UNDEF);
+		return (TEXT_UNDEF);
 	}
 
-	//Index setzten 1. und letzter Name in Argliste, Anzahl
+	// Index setzten 1. und letzter Name in Argliste, Anzahl
 	idxstart = cnt;
 	idxend = argc - 1;
-	anz_namen = (idxend - idxstart) + 1;
+	number_of_names = (idxend - idxstart) + 1;
 
-	//Speicher für Namen Liste anfordern und übergebene Namen kopieren
-	namen_liste = (NAME_FORM*) malloc( anz_namen * sizeof( NAME_FORM ));
-	if (namen_liste == NULL)
-	{
+	// Speicher für Namen Liste anfordern und übergebene Namen kopieren
+	names_list = (nameinfo_t*) malloc( number_of_names * sizeof( nameinfo_t ));
+	if (names_list == NULL) {
 		fprintf(stderr, "Fehler bei Speichanforderung !\n");
 		return (MEM_ERR);
 	}
-	for (cnt = 0; cnt < anz_namen; cnt++) strcpy(namen_liste[cnt].Name, argv[cnt + idxstart]);
+	for (cnt = 0; cnt < number_of_names; cnt++) strcpy(names_list[cnt].Name, argv[cnt + idxstart]);
 
-	//Namen prüfen und Rest in namen_liste ergänzen lassen, wenn Fehler Ende
-	rv=pruefe_namen_liste(namen_liste, anz_namen, optionen);
-	if (rv != TEXT_OK)
-	{
-		zeige_fehler (rv);
-		free (namen_liste);
-		return (rv);
+	// Namen prüfen und Rest in names_list ergänzen lassen, wenn Fehler Ende
+	retval=check_names_list(names_list, number_of_names, options);
+	if (retval != TEXT_OK) {
+		show_error (retval);
+		free (names_list);
+		return (retval);
 	}
 
-	//stdin lesen Ende bei MEM ERROR
-	textdaten=lies_eingabe();
-	if (textdaten == NULL)
-	{
+	// stdin lesen Ende bei MEM ERROR
+	text_data=read_stdin();
+	if (text_data == NULL) {
 		fprintf(stderr, "Fehler bei Speichanforderung !\n");
-		free (namen_liste);
+		free (names_list);
 		return (MEM_ERR);
 	}
 
-	//Wenn übergebenen Daten leer Ende
-	if (textdaten[0] == '\0')
-	{
+	// Wenn übergebenen Daten leer Ende
+	if (text_data[0] == '\0') {
 		fprintf (stderr, "Keine Textdaten übergeben !\n");
-		free (namen_liste);
-		free (textdaten);
-		return (TEXT_UNDEFINIERT);
+		free (names_list);
+		free (text_data);
+		return (TEXT_UNDEF);
 	}
 
-	//Datenausgabe je nach Anzeigemodus starten Exitcode je nach Anzahl Funde
-	//Wenn mehr als ein Anzeigeparameter übergeben, "gewinnt" der Höhere
-	if      (op_a == OP_EIN) rv=ausgabe_a (namen_liste, anz_namen, optionen, textdaten);
-	else if (op_z == OP_EIN) rv=ausgabe_z (namen_liste, anz_namen, optionen, textdaten);
-	else if (op_w == OP_EIN) rv=ausgabe_w (namen_liste, anz_namen, optionen, textdaten);
-	else if (op_c == OP_EIN) rv=ausgabe_c (namen_liste, anz_namen, optionen, textdaten);
-	else if (op_x == OP_EIN) rv=ausgabe_x (namen_liste, anz_namen, optionen, textdaten);
+	// Datenausgabe je nach Anzeigemodus starten Exitcode je nach Anzahl Funde
+	// Wenn mehr als ein Anzeigeparameter übergeben, "gewinnt" der Höhere
+	if      (outops.a == OP_ON) retval=outmode_a (names_list, number_of_names, options, text_data);
+	else if (outops.z == OP_ON) retval=outmode_z (names_list, number_of_names, options, text_data);
+	else if (outops.w == OP_ON) retval=outmode_w (names_list, number_of_names, options, text_data);
+	else if (outops.c == OP_ON) retval=outmode_c (names_list, number_of_names, options, text_data);
+	else if (outops.x == OP_ON) retval=outmode_x (names_list, number_of_names, options, text_data);
 
-	free (namen_liste);
-	free (textdaten);
-	return (rv);
+	free (names_list);
+	free (text_data);
+	return (retval);
 }
 
 
