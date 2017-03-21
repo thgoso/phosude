@@ -1,6 +1,6 @@
 /*
 phonecode-de
-Kodiert einen übergebenen (Nach)namen in den angegebenen phonetischen Code
+Kodiert einen übergebenen Namen/Wort in den angegebenen phonetischen Code
 Zielcodierungen sind:
 Kölner Phonetik		für deutsche Namen nach eigener Erfahrung am optimalsten
 					Code Numerisch, variable Länge
@@ -26,90 +26,100 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 
 #include <stdio.h>
 #include <string.h>
-#include "basis_func.h"
+#include "phonetics.h"
+
+// Statuskonstannten / Fehlercodes
+#define PHCODE_STAT_OK			0
+#define PHCODE_STAT_TO_SHORT	1		// Name/Wort zur kurz zum sinnvollen Codieren
+#define PHCODE_STAT_TO_LONG		2		// Name/Wort zu Lang
+#define PHCODE_STAT_NO_CODE		3		// Name/Wort erzeugt keinen phonetischen Code
+#define PHCODE_STAT_NO_WORD		4		// Name/Wort kein ungültig (enthält Sonderzeichen usw.)
+#define PHCODE_STAT_PARAM_ERR	5		// ungültige Übergabeparameter
+
 
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // passend zum Fehlercode wird ein Text ausgegeben
 static void show_error (int err_no)
 {
-	if (err_no == TEXT_TO_SHORT) fprintf(stderr, "Name zu kurz zum sinnvollen dekodieren !\n");
-	else if (err_no == TEXT_ERROR) fprintf(stderr, "Konvertierung nicht möglich, Name enthält unerlaubte Zeichen !\n");
-	else if (err_no == TEXT_NO_CODE) fprintf(stderr, "erzeugt keinen gültigen phonetischen Code !\n");
-	else if (err_no == TEXT_UNDEF) {
+	if (err_no == PHCODE_STAT_TO_SHORT) fprintf(stderr, "Name zu kurz zum sinnvollen kodieren !\n");
+	else if (err_no == PHCODE_STAT_TO_LONG) fprintf(stderr, "Name zu lang !\n");
+	else if (err_no == PHCODE_STAT_NO_CODE) fprintf(stderr, "Name erzeugt keinen gültigen phonetischen Code !\n");
+	else if (err_no == PHCODE_STAT_NO_WORD) fprintf(stderr, "Name enthält unerlaubte Zeichen !\n");
+	else if (err_no == PHCODE_STAT_PARAM_ERR) {
 		fprintf(stderr, "Falsche Aufrufparameter !\n"
 			"Aufruf:   phonecode-de -codetyp Name\n"
 			"z.B.      phonecode-de -k Müller\n"
 			"Rückgabe: phonetischer Code\n"
 			"Exitcode: %d bei erfolgreicher phonetischer Codierung\n"
+			"          %d wenn Name zu kurz zum sinnvollen codieren\n"
+			"          %d wenn Name zu lang\n"
+			"          %d wenn auf Grund des Namens keine kodierung erfolgt z.B. phonecode-de -p Aahe\n"
 			"          %d wenn unerlaubte Zeichen im Namen enthalten sind. Erlaubt sind nur einzelne Worte,\n"
 			"            Buchstaben deutsches Alphabet incl. Umlaute. Keine Leerzeichen oder Satzzeichen.\n"
 			"          %d wenn falsche Aufrufparameter\n"
-			"          %d wenn Name kürzer als 2 Buchstaben\n"
-			"          %d wenn auf Grund des Namens keine kodierung erfolgt z.B. phonecode_de -p Aahe\n"
 			"Codetyp:  -k = Kölner Phonetik\n"
 			"          -p = Phonem\n"
 			"          -s = Soundex\n"
-			"          -e = Extended Soundex\n", TEXT_OK, TEXT_ERROR, TEXT_UNDEF, TEXT_TO_SHORT, TEXT_NO_CODE);
+			"          -e = Extended Soundex\n",PHCODE_STAT_OK, PHCODE_STAT_TO_SHORT, PHCODE_STAT_TO_LONG,
+												PHCODE_STAT_NO_CODE, PHCODE_STAT_NO_WORD, PHCODE_STAT_PARAM_ERR );
 	}
 }
-
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 int main(int argc, char* argv[])
 {
+	int		convstat;
+	int		convmode;
 	int		exitcode;
-	char	name[MAX_WORD_LEN];
-	char	code[MAX_WORD_LEN];
+	char	code[BUFFER_CODE_SIZE];
 
 	// Übergabeparameter prüfen
 	// Falsche Anzahl Argumente
 	if (argc != 3) {
-		exitcode = TEXT_UNDEF;
+		exitcode = PHCODE_STAT_PARAM_ERR;
 		show_error (exitcode);
-		return (exitcode);
+		return exitcode;
 	}
 
 	// Namen kleiner als 2 Zeichen erzeugen Fehler
 	if (strlen (argv[2]) < 2) {
-		exitcode=TEXT_TO_SHORT;
+		exitcode = PHCODE_STAT_TO_SHORT;
 		show_error(exitcode);
-		return (exitcode);
+		return exitcode;
 	}
 
-	// Eingabe prüfen ob einzelnes deutsches Wort
-	exitcode=check_word_german(argv[2]);
-	if (exitcode == TEXT_ERROR) {
-		show_error (exitcode);
-		return (exitcode);
-	}
-
-	// Name kopieren in Kleinbuchstaben wandeln und Umlaute ersetzten
-	strcpy(name, argv[2]);
-	conv_to_lower (name);
-	conv_uml (name);
-
-	// Text je nach Codeparameter wandeln, Ende wenn unbekannter Parameter
-	if (strcmp (argv[1], "-k") == 0) conv_to_cologne (name, code);
-	else if (strcmp (argv[1], "-p") == 0) conv_to_phonem (name, code);
-	else if (strcmp (argv[1], "-s") == 0) conv_to_soundex (name, code);
-	else if (strcmp (argv[1], "-e") == 0) conv_to_exsoundex (name, code);
+	// Übergabeparameter Codetyp abfragen/setzen, Ende wenn unbekannter Parameter
+	if (strcmp (argv[1], "-k") == 0) convmode = CONV_MODE_COLOGNE;
+	else if (strcmp (argv[1], "-p") == 0) convmode = CONV_MODE_PHONEM;
+	else if (strcmp (argv[1], "-s") == 0) convmode = CONV_MODE_SOUNDEX;
+	else if (strcmp (argv[1], "-e") == 0) convmode = CONV_MODE_EXSOUNDEX;
 	else {
-		exitcode=TEXT_UNDEF;
+		exitcode = PHCODE_STAT_PARAM_ERR;
 		show_error (exitcode);
-		return (exitcode);
+		return exitcode;
 	}
-
-	// Wenn Code = leer = Ungültiger Code = Fehler
-	if (strlen (code) < 1) {
-		exitcode=TEXT_NO_CODE;
-		fprintf(stderr, "%s %s ",argv[1] ,argv[2]);
+	
+	// Name in phon. Code wandeln
+	convstat = phoneconvert (argv[2], code, convmode);
+	
+	// Fehler beim codieren
+	if (convstat == CONV_STAT_NO_CODE) {
+		exitcode = PHCODE_STAT_NO_CODE;
 		show_error(exitcode);
-		return (exitcode);
+		return exitcode;
+	}
+	else if (convstat == CONV_STAT_NO_WORD) {
+		exitcode = PHCODE_STAT_NO_WORD;
+		show_error(exitcode);
+		return exitcode;
+	}
+	else if (convstat == CONV_STAT_TO_LONG) {
+		exitcode = PHCODE_STAT_TO_LONG;
+		show_error(exitcode);
+		return exitcode;
 	}
 
 	// Alles OK, Code ausgeben
 	printf("%s\n", code);
-	return (TEXT_OK);
+	return PHCODE_STAT_OK;
 }
-
-

@@ -27,17 +27,36 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "basis_func.h"
-#include "phoneshow_func.h"
+#include "phonetics.h"
+#include "phoneshow_out.h"
+
+
+// Statuskonstannten / Fehlercodes
+#define PHSHOW_STAT_FOUND		0		// Es wurde Übereinstimmung im Text gefunden
+#define PHSHOW_STAT_NO_FOUND	1		// Es wurde keine Übereinstimmung im Text gefunden
+#define PHSHOW_STAT_TO_SHORT	2		// Name/Wort zur kurz zum sinnvollen Codieren
+#define PHSHOW_STAT_TO_LONG		3		// Name/Wort zu Lang
+#define PHSHOW_STAT_NO_CODE		4		// Name/Wort erzeugt keinen phonetischen Code
+#define PHSHOW_STAT_NO_WORD		5		// Name/Wort kein ungültig (enthält Sonderzeichen usw.)
+#define PHSHOW_STAT_PARAM_ERR	6		// ungültige Übergabeparameter
+#define PHSHOW_STAT_STDIN_ERR	7		// Keine Daten über stdin erhalten
+#define PHSHOW_STAT_MEM_ERR		8		// Fehler bei Speicheranforderung
+
+
+//Puffergröße beim lesen von stdin
+#define READBUFFER_LEN 			1024
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // passend zum Fehlercode wird ein Text ausgegeben
 static void show_error (int err_no)
 {
-	if (err_no == TEXT_TO_SHORT) fprintf(stderr, "zu kurz zur sinnvollen Suche !\n");
-	else if (err_no == TEXT_ERROR) fprintf(stderr, "enthält unzulässige Zeichen !\n");
-	else if (err_no == TEXT_NO_CODE) fprintf(stderr, "erzeugt keinen gültigen phonetischen Code !\n");
-	else if (err_no == TEXT_UNDEF) {
+	if (err_no == PHSHOW_STAT_TO_SHORT) fprintf(stderr, "zu kurz zur sinnvollen Suche !\n");
+	else if (err_no == PHSHOW_STAT_TO_LONG) fprintf(stderr, "zu lang !\n");
+	else if (err_no == PHSHOW_STAT_NO_CODE) fprintf(stderr, "erzeugt keinen gültigen phonetischen Code !\n");
+	else if (err_no == PHSHOW_STAT_NO_WORD) fprintf(stderr, "enthält unzulässige Zeichen !\n");
+	else if (err_no == PHSHOW_STAT_MEM_ERR) fprintf(stderr, "Fehler bei Speicheranforderung !\n");
+	else if (err_no == PHSHOW_STAT_STDIN_ERR) fprintf(stderr, "Keine Daten von stdin erhalten !\n");
+	else if (err_no == PHSHOW_STAT_PARAM_ERR) {
 		fprintf(stderr, "Falsche Aufrufparameter !\n"
 		"Aufruf:    phoneshow-de [Optionen] Name[n] [_Name[n]]\n"
 		"Hilfe:     phoneshow-de -h\n"
@@ -78,14 +97,17 @@ static void show_help (void)
 	"Hilfe         -h Zeigt diese Hilfe an\n"
 	"Hilfe         -b Zeigt Aufrufbeispiele an\n"
 	"Exitcode       %d wenn mindestens ein phonetisch ähnlicher Name gefunden wurde\n"
-	"               %d wenn unerlaubte Zeichen im Namen enthalten sind. Erlaubt sind nur einzelne Worte,\n"
+	"               %d wenn kein phonetisch ähnlicher Name gefunden wurde\n"
+	"               %d wenn Name zu kurz zum sinnvollen codieren\n"
+	"               %d wenn Name zu lang\n"
+	"               %d wenn auf Grund des Namens keine kodierung erfolgt z.B. phoneshow-de -p Aahe\n"
+    "               %d wenn unerlaubte Zeichen im Namen enthalten sind. Erlaubt sind nur einzelne Worte,\n"
 	"                  Buchstaben deutsches Alphabet incl. Umlaute. Keine Leerzeichen oder Satzzeichen.\n"
 	"               %d wenn falsche Aufrufparameter\n"
-	"               %d wenn Name kürzer als 2 Buchstaben\n"
-	"               %d wenn auf Grund des Namens keine kodierung erfolgt z.B. phoneshow-de -p Aahe\n"
-        "               %d wenn kein phonetisch ähnlicher Name im Text gefunden wurde\n"
-	"               %d wenn es bei Speicheranfordeung zu Problemen kam\n\n",
-	TEXT_OK, TEXT_ERROR, TEXT_UNDEF, TEXT_TO_SHORT, TEXT_NO_CODE, TEXT_NOT_EQUAL, MEM_ERR);
+	"               %d wenn keine Textdaten von stdin empfangen wurden\n"
+	"               %d wenn es bei Speicheranfordeung zu Problemen kam\n\n", 
+	PHSHOW_STAT_FOUND, PHSHOW_STAT_NO_FOUND, PHSHOW_STAT_TO_SHORT, PHSHOW_STAT_TO_LONG, PHSHOW_STAT_NO_CODE,
+	PHSHOW_STAT_NO_WORD, PHSHOW_STAT_PARAM_ERR, PHSHOW_STAT_STDIN_ERR, PHSHOW_STAT_MEM_ERR);
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 static void show_examples (void)
@@ -144,122 +166,253 @@ static void show_examples (void)
 	"Phonetische Suchverfahren = Kölner Phonetik und Phonem.\n\n");
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Liest Daten von stdin ein und gibt Pointer darauf zurück.
+// Bei Problemen mit Speicheranforderung wird NULL zurückgegeben
+static char *read_stdin(void)
+{
+	char	buffer[READBUFFER_LEN];
+	size_t	data_len = 1;
+	char	*data = malloc(sizeof(char) * READBUFFER_LEN);
+
+	if (data == NULL) return (NULL);
+
+	// Über Puffer Eingabe von stdin lesen und komplett in data speichern
+	data[0]='\0';
+	while (fgets(buffer, READBUFFER_LEN, stdin)) {
+		char *old = data;
+		data_len += strlen(buffer);
+		data=realloc(data, data_len);
+		if(data == NULL) {
+			free(old);
+			return (NULL);
+		}
+		strcat(data, buffer);
+	}
+	
+	if (ferror(stdin)) {
+		free(data);
+		return (NULL);
+	}
+	
+	return (data);
+}
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 int main (int argc, char* argv[])
 {
-	int			cnt;
-	int			retval=0;
-	int			idxstart;
-	int			idxend;
-	int			number_of_names;
-	char		*text_data;
-	nameinfo_t	*names_list;
+	int			op_cnt;						// Laufzähler für Optionen
+	int			letter_cnt;					// Laufzähler für Buchstabe
+	int			name_cnt;					// Laufzähler Namen
+	int			color_cnt=0;				// Laufzähler Farbe
+	int			idxstart;					// Hilfsvars
+	int			idxend;						// Index Übergabeparameter
+	int			number_of_names;			// Anzahl übergebene Namen
+	int			conv_stat;					// Status Code Name wandeln
+	bool		only_minusname = true;		// Hilfsvar (Liste besteht NUR aus Minsnamen) true/false
+	bool		found = false;				// Status ob ein Name im Eingabetext gefunden wurde oder nicht
+	char		*text_data;					// Eingabedaten von stdin
+	nameinfo_t	*names_list;				// Namensliste (mit allen Zusatzinfos)
 	
 	// Übergabeparameter (k,p,s,e,l,n,f)
-	options_t	options = {OP_OFF, OP_OFF, OP_OFF, OP_OFF, 0, OP_OFF, OP_ON};
+	options_t	options = {false, false, false, false, 0, false, true};
 
 	// Übergabeparameter (a,z,w,c,x) [Ausgabeformat]
 	struct {
-		int a;
-		int	z;
-		int	w;
-		int	c;
-		int	x;
-	} outops = {OP_OFF, OP_OFF, OP_OFF, OP_OFF, OP_OFF};
+		bool	a;
+		bool	z;
+		bool	w;
+		bool	c;
+		bool	x;
+	} outops = {false, false, false, false, false};
 	
-
-	
-	
-
 
 	// Wenn keine Übergabeparameter Ende
 	if (argc == 1) {
-		show_error (TEXT_UNDEF);
-		return (TEXT_UNDEF);
+		show_error (PHSHOW_STAT_PARAM_ERR);
+		return PHSHOW_STAT_PARAM_ERR;
 	}
 
 	// Optionen aus Übergabe lesen und die Vars danach setzten
-	for (cnt=1; cnt < argc; cnt++) {
-		if (strcmp (argv[cnt], "-k") == 0)options.k = OP_ON;
-		else if (strcmp (argv[cnt], "-p") == 0)options.p = OP_ON;
-		else if (strcmp (argv[cnt], "-s") == 0)options.s = OP_ON;
-		else if (strcmp (argv[cnt], "-e") == 0)options.e = OP_ON;
-		else if (strcmp (argv[cnt], "-n") == 0)options.n = OP_ON;
-		else if (strcmp (argv[cnt], "-f") == 0)options.f = OP_OFF;
-		else if (strcmp (argv[cnt], "-l") == 0)options.l++;
-		else if (strcmp (argv[cnt], "-a") == 0)outops.a = OP_ON;
-		else if (strcmp (argv[cnt], "-z") == 0)outops.z = OP_ON;
-		else if (strcmp (argv[cnt], "-w") == 0)outops.w = OP_ON;
-		else if (strcmp (argv[cnt], "-c") == 0)outops.c = OP_ON;
-		else if (strcmp (argv[cnt], "-x") == 0)outops.x = OP_ON;
-		else if (strcmp (argv[cnt], "-h") == 0) {
+	for (op_cnt=1; op_cnt < argc; op_cnt++) {
+		if (strcmp (argv[op_cnt], "-k") == 0)options.k = true;
+		else if (strcmp (argv[op_cnt], "-p") == 0)options.p = true;
+		else if (strcmp (argv[op_cnt], "-s") == 0)options.s = true;
+		else if (strcmp (argv[op_cnt], "-e") == 0)options.e = true;
+		else if (strcmp (argv[op_cnt], "-n") == 0)options.n = true;
+		else if (strcmp (argv[op_cnt], "-f") == 0)options.f = false;
+		else if (strcmp (argv[op_cnt], "-l") == 0)options.l++;
+		else if (strcmp (argv[op_cnt], "-a") == 0)outops.a = true;
+		else if (strcmp (argv[op_cnt], "-z") == 0)outops.z = true;
+		else if (strcmp (argv[op_cnt], "-w") == 0)outops.w = true;
+		else if (strcmp (argv[op_cnt], "-c") == 0)outops.c = true;
+		else if (strcmp (argv[op_cnt], "-x") == 0)outops.x = true;
+		else if (strcmp (argv[op_cnt], "-h") == 0) {
 			show_help();
-			return 0;
+			return PHSHOW_STAT_PARAM_ERR;
 		}
-		else if (strcmp (argv[cnt], "-b") == 0) {
+		else if (strcmp (argv[op_cnt], "-b") == 0) {
 			show_examples();
-			return 0;
+			return PHSHOW_STAT_PARAM_ERR;
 		}
 		else break;
 	}
 
 	// Wenn kein Anzeigeparameter übergeben -a -z -w -c -x
 	// -z einschalten
-	if (outops.a==OP_OFF && outops.z==OP_OFF && outops.w==OP_OFF && outops.c==OP_OFF && outops.x==OP_OFF) outops.z = OP_ON;
+	if (outops.a==false && outops.z==false && outops.w==false && outops.c==false && outops.x==false) outops.z = true;
 
 	// Keine Namen übergeben = Fehler
-	if (cnt == argc) {
-		show_error (TEXT_UNDEF);
-		return (TEXT_UNDEF);
+	if (op_cnt == argc) {
+		show_error (PHSHOW_STAT_PARAM_ERR);
+		return PHSHOW_STAT_PARAM_ERR;
 	}
 
 	// Index setzten 1. und letzter Name in Argliste, Anzahl
-	idxstart = cnt;
+	idxstart = op_cnt;
 	idxend = argc - 1;
 	number_of_names = (idxend - idxstart) + 1;
 
-	// Speicher für Namen Liste anfordern und übergebene Namen kopieren
+	// Speicher für Namen Liste anfordern, Ende wenn Fehler
 	names_list = (nameinfo_t*) malloc( number_of_names * sizeof( nameinfo_t ));
 	if (names_list == NULL) {
-		fprintf(stderr, "Fehler bei Speichanforderung !\n");
-		return (MEM_ERR);
+		show_error (PHSHOW_STAT_MEM_ERR);
+		return PHSHOW_STAT_MEM_ERR;
 	}
-	for (cnt = 0; cnt < number_of_names; cnt++) strcpy(names_list[cnt].Name, argv[cnt + idxstart]);
-
-	// Namen prüfen und Rest in names_list ergänzen lassen, wenn Fehler Ende
-	retval=check_names_list(names_list, number_of_names, options);
-	if (retval != TEXT_OK) {
-		show_error (retval);
+	
+	// Alle Namen aus Übergabe durchlaufen
+	for (name_cnt = 0; name_cnt < number_of_names; name_cnt++) {
+		// Ende wenn übergabe zu Kurz oder zu Lang
+		if (strlen(argv[name_cnt+idxstart]) < 2) {
+			fprintf (stderr, "%s ", argv[name_cnt+idxstart]);
+			show_error (PHSHOW_STAT_TO_SHORT);
+			free (names_list);
+			return PHSHOW_STAT_TO_SHORT;
+		}
+		if (strlen(argv[name_cnt+idxstart]) >= (BUFFER_NAME_SIZE-1)) {
+			fprintf (stderr, "%s ", argv[name_cnt+idxstart]);
+			show_error (PHSHOW_STAT_TO_LONG);
+			free (names_list);
+			return PHSHOW_STAT_TO_LONG;
+		}
+		// Länge paßt... Namen in names_list[].Name kopieren
+		strcpy(names_list[name_cnt].Name, argv[name_cnt + idxstart]);
+		// Bei Minusname "_" entfernen und Ist_Minusname = true
+		// Keine phon. Codes erzeugen, keine Farbe erzeugen
+		// Normale SuchNamen Ist_Minusname = false setzten
+		// phon. Codes erzeugen, Colorstring erzeugen
+		if (names_list[name_cnt].Name[0] == '_') {
+			letter_cnt=1;
+			while (names_list[name_cnt].Name[letter_cnt] != '\0') {
+				names_list[name_cnt].Name[letter_cnt-1] = names_list[name_cnt].Name[letter_cnt];
+				letter_cnt++;
+			} 
+			names_list[name_cnt].Name[letter_cnt-1]='\0';
+			names_list[name_cnt].Is_Minusname = true;
+		}	
+		else {
+			names_list[name_cnt].Is_Minusname = false;
+			if (options.f == true) strcpy (names_list[name_cnt].Colorstring, colors[color_cnt % NUMBER_OF_COLORS]);
+			else names_list[name_cnt].Colorstring[0] = '\0';
+			color_cnt++;
+			only_minusname=false;
+		}
+		// Codes zum Namen erstellen je nach Optionen Phonetik
+		// Fehler wenn ungültiger Code oder ungültiges Wort (Rest wird eh schon vorher geprüft)
+		if ((options.k == true) && (names_list[name_cnt].Is_Minusname == false)) {
+			conv_stat = phoneconvert (names_list[name_cnt].Name, names_list[name_cnt].Code_k, CONV_MODE_COLOGNE);
+			if (conv_stat == CONV_STAT_NO_CODE) {
+				fprintf (stderr, "-k %s ", names_list[name_cnt].Name);
+				show_error(PHSHOW_STAT_NO_CODE);
+				free (names_list);
+				return PHSHOW_STAT_NO_CODE;
+			}
+			if (conv_stat == CONV_STAT_NO_WORD) {
+				fprintf (stderr, "%s ", names_list[name_cnt].Name);
+				show_error(PHSHOW_STAT_NO_WORD);
+				free (names_list);
+				return PHSHOW_STAT_NO_WORD;
+			}			
+		}
+		if ((options.p == true) && (names_list[name_cnt].Is_Minusname == false)) {
+			conv_stat = phoneconvert (names_list[name_cnt].Name, names_list[name_cnt].Code_p, CONV_MODE_PHONEM);
+			if (conv_stat == CONV_STAT_NO_CODE) {
+				fprintf (stderr, "-p %s ", names_list[name_cnt].Name);
+				show_error(PHSHOW_STAT_NO_CODE);
+				free (names_list);
+				return PHSHOW_STAT_NO_CODE;
+			}
+			if (conv_stat == CONV_STAT_NO_WORD) {
+				fprintf (stderr, "%s ", names_list[name_cnt].Name);
+				show_error(PHSHOW_STAT_NO_WORD);
+				free (names_list);
+				return PHSHOW_STAT_NO_WORD;
+			}			
+		}
+		if ((options.s == true) && (names_list[name_cnt].Is_Minusname == false)) {
+			conv_stat = phoneconvert (names_list[name_cnt].Name, names_list[name_cnt].Code_s, CONV_MODE_SOUNDEX);
+			if (conv_stat == CONV_STAT_NO_CODE) {
+				fprintf (stderr, "-s %s ", names_list[name_cnt].Name);
+				show_error(PHSHOW_STAT_NO_CODE);
+				free (names_list);
+				return PHSHOW_STAT_NO_CODE;
+			}
+			if (conv_stat == CONV_STAT_NO_WORD) {
+				fprintf (stderr, "%s ", names_list[name_cnt].Name);
+				show_error(PHSHOW_STAT_NO_WORD);
+				free (names_list);
+				return PHSHOW_STAT_NO_WORD;
+			}			
+		}
+		if ((options.e == true) && (names_list[name_cnt].Is_Minusname == false)) {
+			conv_stat = phoneconvert (names_list[name_cnt].Name, names_list[name_cnt].Code_e, CONV_MODE_EXSOUNDEX);
+			if (conv_stat == CONV_STAT_NO_CODE) {
+				fprintf (stderr, "-e %s ", names_list[name_cnt].Name);
+				show_error(PHSHOW_STAT_NO_CODE);
+				free (names_list);
+				return PHSHOW_STAT_NO_CODE;
+			}
+			if (conv_stat == CONV_STAT_NO_WORD) {
+				fprintf (stderr, "%s ", names_list[name_cnt].Name);
+				show_error(PHSHOW_STAT_NO_WORD);
+				free (names_list);
+				return PHSHOW_STAT_NO_WORD;
+			}			
+		}
+	}
+	// Wenn Namensliste NUR aus Minusnamen besteht = Fehler
+	if (only_minusname == true) {
 		free (names_list);
-		return (retval);
+		return PHSHOW_STAT_PARAM_ERR;
 	}
-
+	
 	// stdin lesen Ende bei MEM ERROR
 	text_data=read_stdin();
 	if (text_data == NULL) {
-		fprintf(stderr, "Fehler bei Speichanforderung !\n");
+		show_error(PHSHOW_STAT_MEM_ERR);
 		free (names_list);
-		return (MEM_ERR);
+		return PHSHOW_STAT_MEM_ERR;
 	}
 
 	// Wenn übergebenen Daten leer Ende
 	if (text_data[0] == '\0') {
-		fprintf (stderr, "Keine Textdaten übergeben !\n");
+		show_error(PHSHOW_STAT_STDIN_ERR);
 		free (names_list);
 		free (text_data);
-		return (TEXT_UNDEF);
+		return PHSHOW_STAT_STDIN_ERR;
 	}
 
 	// Datenausgabe je nach Anzeigemodus starten Exitcode je nach Anzahl Funde
 	// Wenn mehr als ein Anzeigeparameter übergeben, "gewinnt" der Höhere
-	if      (outops.a == OP_ON) retval=outmode_a (names_list, number_of_names, options, text_data);
-	else if (outops.z == OP_ON) retval=outmode_z (names_list, number_of_names, options, text_data);
-	else if (outops.w == OP_ON) retval=outmode_w (names_list, number_of_names, options, text_data);
-	else if (outops.c == OP_ON) retval=outmode_c (names_list, number_of_names, options, text_data);
-	else if (outops.x == OP_ON) retval=outmode_x (names_list, number_of_names, options, text_data);
+	if      (outops.a == true) found = outmode_a (names_list, number_of_names, options, text_data);
+	else if (outops.z == true) found = outmode_z (names_list, number_of_names, options, text_data);
+	else if (outops.w == true) found = outmode_w (names_list, number_of_names, options, text_data);
+	else if (outops.c == true) found = outmode_c (names_list, number_of_names, options, text_data);
+	else if (outops.x == true) found = outmode_x (names_list, number_of_names, options, text_data);
 
 	free (names_list);
 	free (text_data);
-	return (retval);
+	
+	if (found == true) return PHSHOW_STAT_FOUND;
+	else return PHSHOW_STAT_NO_FOUND;
 }
 
 
