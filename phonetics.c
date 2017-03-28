@@ -1,7 +1,7 @@
 /*
 Erzeugen von phonetischen Codes
 
-	Copyright (C) 2015, Thomas Gollmer, th_goso@freenet.de
+	Copyright (C) 2015-2017, Thomas Gollmer, th_goso@freenet.de
 	Dieses Programm ist freie Software. Sie können es unter den Bedingungen der GNU General Public License,
 	wie von der Free Software Foundation veröffentlicht, weitergeben und/oder modifizieren,
 	entweder gemäß Version 3 der Lizenz oder (nach Ihrer Option) jeder späteren Version.
@@ -15,536 +15,534 @@ Erzeugen von phonetischen Codes
 
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 #include "phonetics.h"
 
 
-
-//Typedef für Umlaute
-typedef char uml_t[3];
-
-
-
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Private Funktionen
+// Private Funktionen zur Stringmanipulation
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Prüft ob Text ein deutsches Wort ist. Das ist es wenn ausschließlich deutsche Buchstaben im String
-// enthalten sind NICHTS anderes (Auch kein Space) !!!
-// Falls OK wird "CONV_STAT_OK" zurückgegeben, sonst  "CONV_STAT_NO_WORD"
-static int check_word_german (const char *text)
+// Vorkonvertierroutine
+// Wandelt ein übergebenes deutsches Wort von UTF-8 nach ASCII GROSSBUCHSTABEN
+// Umlaute:	Ä,ä = AE
+//			Ü,ü = UE
+//			Ö,ö = OE
+//			ß   = SS
+// Deutsche Umlaute sind in UTF-8 immer 2Byte
+// Die Ersatzzeichen sind ebenfalls 2Byte
+// Daher ändert sich an der Stringgröße nichts beim ersetzten
+// Sollten sich andere Zeichen als (A-Z, a-z, Ä, Ö, Ü, ä, ö, ü, ß) im String befinden
+// wird der Inhalt gänzlich gelöscht, da String kein deutsches Wort ist
+static void preconvert (char *s)
 {
-	int			cnt=0;
-	char		letter[3];
-	int			ulcnt;
-	int			gd;
-	const uml_t	ul_list[]={{"Ä"},{"Ö"},{"Ü"},{"ä"},{"ö"},{"ü"},{"ß"}};
+	const char	uml[7][3] = {{"Ä"}, {"Ö"}, {"Ü"}, {"ä"}, {"ö"}, {"ü"}, {"ß"}};
+	const char	rep[7][3] = {{"AE"},{"OE"},{"UE"},{"AE"},{"OE"},{"UE"},{"SS"}};
+	uint8_t		cnt;
+	uint8_t		replaced;
+	size_t		pos=0;
 
-	while (text[cnt] != '\0') {
-		// A-Z, a-z
-		if ((text[cnt] >= 'A' && text[cnt] <= 'Z') || (text[cnt] >= 'a' && text[cnt] <= 'z')) {
-			cnt++;
+	while (s[pos] != '\0') {
+		// A-Z
+		if ((s[pos] >= 'A') && (s[pos] <= 'Z')) {
+			pos++;
+			continue;
+		}
+		// a-z
+		if ((s[pos] >= 'a') && (s[pos] <= 'z')) {
+			s[pos] -= 32;
+			pos++;
 			continue;
 		}
 		// Umlaute 0-6
-		gd=0;
-		for (ulcnt=0; ulcnt <=6; ulcnt++) {
-			strcpy(letter, ul_list[ulcnt]);
-			if (text[cnt] == letter[0] && text[cnt+1] == letter[1]) {
-				cnt+=2;
-				gd=1;
+		replaced=0;
+		for (cnt=0; cnt<=6; cnt++) {
+			if ((s[pos] == uml[cnt][0]) && (s[pos+1] == uml[cnt][1])) {
+				s[pos] = rep[cnt][0];
+				s[pos+1] = rep[cnt][1];
+				pos+=2;
+				replaced=1;
 				break;
 			}
 		}
-		if (gd == 1) continue;
-		// Verbotenes Zeichen
-		return CONV_STAT_NO_WORD;
-	}
-	return CONV_STAT_OK;
-}
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Konvertiert alle Umlaute in Einzelbuchstaben
-static void conv_uml (char *text)
-{
-	int			cnt=0;
-	char		letter[3];
-	int			ulcnt;
-	const uml_t	ul_list[]     = {{"Ä"}, {"Ö"}, {"Ü"}, {"ä"}, {"ö"}, {"ü"}, {"ß"}};
-	const uml_t ul_rep_list[] = {{"AE"},{"OE"},{"UE"},{"ae"},{"oe"},{"ue"},{"ss"}};
-
-	while (text[cnt] != '\0') {
-		for (ulcnt = 0; ulcnt <= 6; ulcnt++) {
-			strcpy(letter, ul_list[ulcnt]);
-			if (text[cnt] == letter[0] && text[cnt + 1] == letter[1]) {
-				strcpy(letter, ul_rep_list[ulcnt]);
-				text[cnt] = letter[0];
-				text[cnt + 1] = letter[1];
-				cnt++;
-				break;
-			}
-		}
-		cnt++;
+		if (replaced == 1) continue;
+		// Verbotenes Zeichen angetroffen... String verwerfen
+		s[0]='\0';
+		return;
 	}
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Wandelt alle Kleinbuchstaben im String in Großbuchstaben (a-z), Umlaute, ß wird zu SS
-static void conv_to_upper (char *text)
+// entfernt einzelne Zeichen im String die dem übergebenen Zeichen (c) entsprechen,
+// sodaß dieses Zeichen gelöscht wird
+static void delete_char (char *s, const char c)
 {
-	int			cnt=0;
-	char		letter[3];
-	int			ulcnt;
-	const uml_t	ul_list[]     = {{"ä"},{"ö"},{"ü"},{"ß"}};
-	const uml_t ul_rep_list[] = {{"Ä"},{"Ö"},{"Ü"},{"SS"}};
-
-	while (text[cnt] != '\0') {
-		// a-z
-		if (text[cnt] >= 'a' && text[cnt] <= 'z') {
-			text[cnt] -= 32;
-			cnt++;
-			continue;
-		}
-		// kleine Umlaute 0-3
-		for (ulcnt = 0; ulcnt <= 3; ulcnt++) {
-			strcpy(letter, ul_list[ulcnt]);
-			if (text[cnt] == letter[0] && text[cnt + 1] == letter[1]) {
-				strcpy(letter, ul_rep_list[ulcnt]);
-				text[cnt] = letter[0];
-				text[cnt + 1] = letter[1];
-				cnt++;
-				break;
-			}
-		}
-		cnt++;
-	}
-}
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Wandelt alle Großbuchstaben im String in Kleinbuchstaben (A-Z), Umlaute
-static void conv_to_lower (char *text)
-{
-	int			cnt=0;
-	char		letter[3];
-	int			ulcnt;
-	const uml_t	ul_list[]     = {{"Ä"},{"Ö"},{"Ü"}};
-	const uml_t	ul_rep_list[] = {{"ä"},{"ö"},{"ü"}};
-
-	while (text[cnt] != '\0') {
-		// A-Z
-		if (text[cnt] >= 'A' && text[cnt] <= 'Z') {
-			text[cnt] += 32;
-			cnt++;
-			continue;
-		}
-		// Große Umlaute 0-2
-		for (ulcnt = 0; ulcnt <= 2; ulcnt++) {
-			strcpy(letter, ul_list[ulcnt]);
-			if (text[cnt] == letter[0] && text[cnt + 1] == letter[1]) {
-				strcpy(letter, ul_rep_list[ulcnt]);
-				text[cnt] = letter[0];
-				text[cnt + 1] = letter[1];
-				cnt++;
-				break;
-			}
-		}
-		cnt++;
-	}
-}
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// entfernt einzelne Zeichen im Text die dem übergebenen Zeichen entsprechen, sodaß dieses Zeichen gelöscht wird
-// Text darf KEINE Mehrbytezeichen enthalten
-static void kill_onebytechars (char *text, const char character)
-{
-	int		cnt=0;
-	char	tmp[BUFFER_CODE_SIZE];
-	char	letter[2];
-
-	letter[1]='\0';
-	tmp[0]='\0';
-
-	do {
-		if (text[cnt] != character) {
-			letter[0] = text[cnt];
-			strcat (tmp, letter);
-		}
-		cnt++;
-	} while (text[cnt] != '\0');
+	size_t	pos_read=0;
+	size_t	pos_write=0;
 	
-	strcpy(text, tmp);
+	// Fehlerhafte Übergabe 
+	if (c == '\0') return;
+	
+	while (1) {
+		if (s[pos_read] == '\0') {
+			s[pos_write] = '\0';
+			break;
+		}
+		else if (s[pos_read] == c) {
+			pos_read++;
+		}
+		else {
+			s[pos_write] = s[pos_read];
+			pos_read++;
+			pos_write++;
+		}
+	}
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // entfernt alle mehrfach hintereinander auftretenden Zeichen im Text, sodaß nur noch je eines vorhanden ist
-// Text darf KEINE Mehrbytezeichen enthalten
-static void kill_double_onebytechars (char *text)
+static void delete_multiplechar (char *s)
 {
-	int		cnt=0;
-	int		last=0;
-	char	tmp[BUFFER_CODE_SIZE];
-	char	letter[2];
-
-	letter[1]='\0';
-	tmp[0]='\0';
-
-	do {
-		if (text[cnt] != last) {
-			letter[0] = text[cnt];
-			strcat (tmp, letter);
-			last = text[cnt];
-		}
-		cnt++;
-	} while (text[cnt] != '\0');
+	size_t	pos_read=0;
+	size_t	pos_write=0;
+	char	last='\0';
 	
-	strcpy(text, tmp);
+	while (1) {
+		if (s[pos_read] == '\0') {
+			s[pos_write] = '\0';
+			break;
+		}			
+		else if (s[pos_read] == last) {
+			pos_read++;
+		}
+		else {
+			last = s[pos_read];
+			s[pos_write] = last;
+			pos_read++;
+			pos_write++;
+		}
+	}
+}
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Öffentliche Funktionen Phonetische Codierverfahren
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Soundex Verfahren
+void phoneconvert_soundex (const char *src, char *dest)
+{
+	char	first;
+	size_t	size;
+	size_t	pos=0;
+
+	// Rückgabe leeren
+	dest[0]='\0';
+	
+	// Ende wenn Übergabewort zu lang
+	if (strlen(src) >= BUFFER_WORD_SIZE) return ;
+	
+	// src nach dest kopieren
+	strcpy(dest, src);
+	
+	// Vorkonvertieren, Ende wenn Leerstring
+	preconvert(dest);
+	if (dest[0] == '\0') return ;
+
+	// 1. Zeichen aus dest merken
+	// und in dest mit '-' ausmaskieren
+	first=dest[0];
+	dest[0]='-';
+	
+	// Ersetzungsregeln auf dest anwenden
+	while (dest[pos] != '\0') {
+		switch (dest[pos]) {
+			case 'A': case 'E': case 'H': case 'I': case 'O': case 'U': case 'W': case 'Y':
+				dest[pos] = '0';
+				break;
+			case 'B': case 'F': case 'P': case 'V':
+				dest[pos] = '1';
+				break;
+			case 'C': case 'G': case 'J': case 'K': case 'Q': case 'S': case 'X': case 'Z':
+				dest[pos] = '2';
+				break;
+			case 'D': case 'T':
+				dest[pos] = '3';
+				break;
+			case 'L':
+				dest[pos] = '4';
+				break;
+			case 'M': case 'N':
+				dest[pos] = '5';
+				break;
+			case 'R':
+				dest[pos] = '6';
+				break;
+		}
+		pos++;
+	}
+
+	// Doppelte entfernen, dann 0en entfernen
+	delete_multiplechar(dest);
+	delete_char(dest, '0');
+	
+	// gemerktes 1. Zeichen wieder nach dest schieben... Alles auf 4 Stellen kürzen/0en anhängen
+	dest[0]=first;
+	size=strlen(dest);
+
+	if (size == 1) strcat (dest, "000");
+	else if (size == 2) strcat (dest, "00");
+	else if (size == 3) strcat (dest, "0");
+	else if (size > 4) dest[4]='\0';
+}
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Extended Soundex Verfahren
+void phoneconvert_exsoundex (const char *src, char *dest)
+{
+	size_t	size;
+	size_t	pos=0;
+
+	// Rückgabe leeren
+	dest[0]='\0';
+	
+	// Ende wenn Übergabewort zu lang
+	if (strlen(src) >= BUFFER_WORD_SIZE) return ;
+	
+	// src nach dest kopieren
+	strcpy(dest, src);
+	
+	// Vorkonvertieren, Ende wenn Leerstring
+	preconvert(dest);
+	if (dest[0] == '\0') return ;
+
+	// Ersetzungsregeln auf dest anwenden
+	while (dest[pos] != '\0') {
+		switch (dest[pos]) {
+			case 'A': case 'E': case 'H': case 'I': case 'O': case 'U': case 'W': case 'Y':
+				dest[pos] = '0';
+				break;
+			case 'B': case 'P':
+				dest[pos] = '1';
+				break;
+			case 'V': case 'F':
+				dest[pos] = '2';
+				break;
+			case 'C': case 'K': case 'S':
+				dest[pos] = '3';
+				break;
+			case 'G': case 'J':
+				dest[pos] = '4';
+				break;
+			case 'Q': case 'X': case 'Z':
+				dest[pos] = '5';
+				break;
+			case 'D': case 'T':
+				dest[pos] = '6';
+				break;
+			case 'L':
+				dest[pos] = '7';
+				break;
+			case 'M': case 'N':
+				dest[pos] = '8';
+				break;
+			case 'R':
+				dest[pos] = '9';
+				break;
+		}
+		pos++;
+	}
+	
+	// Doppelte entfernen, dann 0en entfernen
+	delete_multiplechar(dest);
+	delete_char(dest, '0');
+
+	// Auf 5 Stellen kürzen / mit "0" auffüllen
+	size=strlen(dest);
+
+	if (size == 0) strcat (dest, "00000");
+	else if (size == 1) strcat (dest, "0000");
+	else if (size == 2) strcat (dest, "000");
+	else if (size == 3) strcat (dest, "00");
+	else if (size == 4) strcat (dest, "0");
+	else dest[5]='\0';
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Kölner Phonetik Verfahren
-// Wort wird in Gruppen von 3 Buchstaben gelesen, da es Regeln für "NACH" und "VOR" Buchstabe gibt
-// Der Referenzbuchstabe ist immer der in der Mitte der 3er Gruppe
-static void conv_to_cologne(const char *target, char *dest)
+void phoneconvert_cologne (const char *src, char *dest)
 {
-	char	text[BUFFER_CODE_SIZE]="\0";
-	char	code[BUFFER_CODE_SIZE]="\0";
-	char	group[3];
-	int		len;
-	int		cnt;
+	char	scode1[BUFFER_CODE_SIZE];
+	char	scode2[BUFFER_CODE_SIZE];
+	char	first;
+	char	group[3];	
+	size_t	size;
+	size_t	pos;
 
-	// Wegen lesen in 3er Gruppen erweitern wir den übergebenen String
-	// nachdem er in text kopiert ist hinten um vorn um ein Zeichen
-	strcat (text, " ");
-	strcat (text, target);
-	strcat (text, " ");
-	len = strlen(text);
-
-	for (cnt=1; cnt<=len - 2; cnt++) {
+	// Rückgabe leeren
+	dest[0]='\0';
+	
+	// Ende wenn Übergabewort zu lang
+	if (strlen(src) >= BUFFER_WORD_SIZE) return ;
+	
+	// src nach scode1 kopieren
+	strcpy(scode1, src);
+	
+	// Vorkonvertieren, Ende wenn Leerstring
+	preconvert(scode1);
+	if (scode1[0] == '\0') return ;
+	
+	
+	// Wegen lesen in 3er Gruppen kopieren wir scode1 nach scode2
+	// und erweitern den übergebenen String hinten und vorn um ein Leerzeichen
+	scode2[0]=' ';
+	scode2[1]='\0';
+	strcat(scode2, scode1);
+	strcat(scode2, " ");
+	
+	// Wort wird in Gruppen von 3 Buchstaben gelesen, da es Regeln für "NACH" und "VOR" Buchstabe gibt
+	// Der Referenzbuchstabe ist immer der in der Mitte der 3er Gruppe
+	// Lesen von scode2, und nach Regeln konvertiert in scode1
+	size = strlen(scode2);
+	scode1[0]='\0';
+	for (pos=1; pos<=size - 2; pos++) {
 		// In 3er Gruppen lesen
-		group[0]=text[cnt - 1];
-		group[1]=text[cnt];
-		group[2]=text[cnt + 1];
+		group[0]=scode2[pos-1];
+		group[1]=scode2[pos];
+		group[2]=scode2[pos+1];
 
 		// Sonderfälle Wortanfang
-		if (cnt==1) {
-			if (group[1] == 'c') {
-				if (group[2] == 'a' || group[2] == 'h' || group[2] == 'k' ||
-					group[2] == 'l' || group[2] == 'o' || group[2] == 'q' ||
-					group[2] == 'r' || group[2] == 'u' || group[2] == 'x') {
-						strcat(code, "4");
+		if (pos==1) {
+			if (group[1] == 'C') {
+				if (group[2] == 'A' || group[2] == 'H' || group[2] == 'K' ||
+					group[2] == 'L' || group[2] == 'O' || group[2] == 'Q' ||
+					group[2] == 'R' || group[2] == 'U' || group[2] == 'X') {
+						strcat(scode1, "4");
 						continue;
 				}
 				else {
-					strcat(code, "8");
+					strcat(scode1, "8");
 					continue;
 				}
 			}
 		}
 
 		// Normale codierung KEIN Wortanfang
-		if (group[1] == 'p' && group[2] == 'h') {
-			strcat (code, "3");
+		if (group[1] == 'P' && group[2] == 'H') {
+			strcat (scode1, "3");
 			continue;
 		}
-		if ((group[1] == 'd' && group[2] == 's') || (group[1] == 'd' && group[2] == 'c') ||
-			(group[1] == 'd' && group[2] == 'z') || (group[1] == 't' && group[2] == 's') ||
-			(group[1] == 't' && group[2] == 'c') || (group[1] == 't' && group[2] == 'z')) {
-				strcat(code, "8");
+		if ((group[1] == 'D' && group[2] == 'S') || (group[1] == 'D' && group[2] == 'C') ||
+			(group[1] == 'D' && group[2] == 'Z') || (group[1] == 'T' && group[2] == 'S') ||
+			(group[1] == 'T' && group[2] == 'C') || (group[1] == 'T' && group[2] == 'Z')) {
+				strcat(scode1, "8");
 				continue;
 		}
-		if (group[1] == 'd' || group[1] == 't') {
-			strcat(code, "2");
+		if (group[1] == 'D' || group[1] == 'T') {
+			strcat(scode1, "2");
 			continue;
 		}
-		if ((group[0] == 'c' && group[1] == 'x') || (group[0] == 'k' && group[1] == 'x') ||
-			(group[0] == 'q' && group[1] == 'x')) {
-				strcat(code, "8");
+		if ((group[0] == 'C' && group[1] == 'X') || (group[0] == 'K' && group[1] == 'X') ||
+			(group[0] == 'Q' && group[1] == 'X')) {
+				strcat(scode1, "8");
 				continue;
 		}
-		if (group[1] == 'x') {
-			strcat(code, "48");
+		if (group[1] == 'X') {
+			strcat(scode1, "48");
 			continue;
 		}
-		if ((group[0] == 's' && group[1] == 'c') || (group[0] == 's' && group[1] == 'z')) {
-			strcat(code, "8");
+		if ((group[0] == 'S' && group[1] == 'C') || (group[0] == 'S' && group[1] == 'Z')) {
+			strcat(scode1, "8");
 			continue;
 		}
-		if (group[1] == 'c') {
-			if (group[2] == 'a' || group[2] == 'o' || group[2] == 'u' || group[2] == 'h' ||
-				group[2] == 'k' || group[2] == 'x' || group[2] == 'q') {
-					strcat(code, "4");
+		if (group[1] == 'C') {
+			if (group[2] == 'A' || group[2] == 'O' || group[2] == 'U' || group[2] == 'H' ||
+				group[2] == 'K' || group[2] == 'X' || group[2] == 'Q') {
+					strcat(scode1, "4");
 					continue;
 			}
 			else {
-				strcat(code, "8");
+				strcat(scode1, "8");
 				continue;
 			}
 		}
-		if (group[1] == 'h') {
-			strcat(code, "h");
+		if (group[1] == 'H') {
+			strcat(scode1, "H");
 			continue;
 		}
-		if (group[1] == 'a' || group[1] == 'e' || group[1] == 'i' || group[1] == 'j' ||
-			group[1] == 'y' || group[1] == 'o' || group[1] == 'u') {
-				strcat(code, "0");
+		if (group[1] == 'A' || group[1] == 'E' || group[1] == 'I' || group[1] == 'J' ||
+			group[1] == 'Y' || group[1] == 'O' || group[1] == 'U') {
+				strcat(scode1, "0");
 				continue;
 		}
-		if (group[1] == 'b' || group[1] == 'p') {
-			strcat(code, "1");
+		if (group[1] == 'B' || group[1] == 'P') {
+			strcat(scode1, "1");
 			continue;
 		}
-		if (group[1] == 'f' || group[1] == 'v' || group[1] == 'w') {
-			strcat(code, "3");
+		if (group[1] == 'F' || group[1] == 'V' || group[1] == 'W') {
+			strcat(scode1, "3");
 			continue;
 		}
-		if (group[1] == 'g' || group[1] == 'k' || group[1] == 'q') {
-			strcat(code, "3");
+		if (group[1] == 'G' || group[1] == 'K' || group[1] == 'Q') {
+			strcat(scode1, "3");
 			continue;
 		}
-		if (group[1] == 'l') {
-			strcat(code, "5");
+		if (group[1] == 'L') {
+			strcat(scode1, "5");
 			continue;
 		}
-		if (group[1] == 'r') {
-			strcat(code, "7");
+		if (group[1] == 'R') {
+			strcat(scode1, "7");
 			continue;
 		}
-		if (group[1] == 'm' || group[1] == 'n') {
-			strcat(code, "6");
+		if (group[1] == 'M' || group[1] == 'N') {
+			strcat(scode1, "6");
 			continue;
 		}
-		if (group[1] == 's' || group[1] == 'z') {
-			strcat(code, "8");
+		if (group[1] == 'S' || group[1] == 'Z') {
+			strcat(scode1, "8");
 			continue;
 		}
 	}
 	
-	// doppelte entfernen, h entfernen
-	kill_double_onebytechars (code);
-	kill_onebytechars (code, 'h');
-	// 0 außer am Anfang entfernen Rückgabe füllen
-	dest[0]='\0';
-	if (code[0] == '0') {
-		dest[0]='0';
-		dest[1]='\0';
-	}
-	kill_onebytechars (code, '0');
-	strcat (dest, code);
+	// doppelte entfernen, H entfernen
+	delete_multiplechar(scode1);
+	delete_char(scode1, 'H');
+	// 0 Außer am Anfang entfernen
+	first=scode1[0];
+	scode1[0]='-';
+	delete_char(scode1, '0');
+	scode1[0]=first;
+
+	// Rückgabe füllen
+	strcpy(dest, scode1);
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Phonem Verfahren
-static void conv_to_phonem(const char *target, char *dest)
+void phoneconvert_phonem (const char *src, char *dest)
 {
-	int		cnt=0;
-	char	txt[BUFFER_CODE_SIZE];
+	char	scode1[BUFFER_CODE_SIZE];
+	char	scode2[BUFFER_CODE_SIZE];
 	char	tmp[5];
+	size_t	pos=0;
 
-	// 1. Durchgang = Buchstabenpaare kopieren/nach Regeln codieren
+	// Rückgabe leeren
+	dest[0]='\0';
+	
+	// Ende wenn Übergabewort zu lang
+	if (strlen(src) >= BUFFER_WORD_SIZE) return ;
+	
+	// src nach scode1 kopieren
+	strcpy(scode1, src);
+	
+	// Vorkonvertieren, Ende wenn Leerstring
+	preconvert(scode1);
+	if (scode1[0] == '\0') return ;
+
+	// 1. Durchgang = Buchstabenpaare kopieren/nach Regeln codieren, Quelle:scode1, Ziel: scode2
 	//                Da es mit dem ö zu Problemen kommt, wird es vorerst als 0 kodiert
-	txt[0]='\0';
-	while (target[cnt] != '\0') {
-		// ae
-		if (target[cnt] == 'a' && target[cnt + 1] == 'e') {
-			strcat(txt, "e");
-			cnt = cnt + 2;
+	scode2[0]='\0';
+	while (scode1[pos] != '\0') {
+		// AE
+		if (scode1[pos] == 'A' && scode1[pos+1] == 'E') {
+			strcat(scode2, "E");
+			pos+=2;
 		}
-		// pf
-		else if (target[cnt] == 'p' && target[cnt + 1] == 'f') {
-			strcat(txt, "v");
-			cnt = cnt + 2;
+		// PF
+		else if (scode1[pos] == 'P' && scode1[pos+1] == 'F') {
+			strcat(scode2, "V");
+			pos+=2;
 		}
-		// ks
-		else if (target[cnt] == 'k' && target[cnt + 1] == 's') {
-			strcat(txt, "x");
-			cnt = cnt + 2;
+		// KS
+		else if (scode1[pos] == 'K' && scode1[pos+1] == 'S') {
+			strcat(scode2, "X");
+			pos+=2;
 		}
-		// qu
-		else if (target[cnt] == 'q' && target[cnt + 1] == 'u') {
-			strcat(txt, "kw");
-			cnt = cnt + 2;
+		// QU
+		else if (scode1[pos] == 'Q' && scode1[pos+1] == 'U') {
+			strcat(scode2, "KW");
+			pos+=2;
 		}
-		// oe
-		else if (target[cnt] == 'o' && target[cnt + 1] == 'e') {
-			strcat(txt, "0");
-			cnt = cnt + 2;
+		// OE
+		else if (scode1[pos] == 'O' && scode1[pos+1] == 'E') {
+			strcat(scode2, "0");
+			pos+=2;
 		}
-		// eu
-		else if (target[cnt] == 'e' && target[cnt + 1] == 'u') {
-			strcat(txt, "oy");
-			cnt = cnt + 2;
+		// EU
+		else if (scode1[pos] == 'E' && scode1[pos+1] == 'U') {
+			strcat(scode2, "OY");
+			pos+=2;
 		}
-		// ou
-		else if (target[cnt] == 'o' && target[cnt + 1] == 'u') {
-			strcat(txt, "u");
-			cnt = cnt + 2;
+		// OU
+		else if (scode1[pos] == 'O' && scode1[pos+1] == 'U') {
+			strcat(scode2, "U");
+			pos+=2;
 		}
-		// ei,ey
-		else if ((target[cnt] == 'e' && target[cnt + 1] == 'i') ||
-			(target[cnt] == 'e' && target[cnt + 1] == 'y')) {
-				strcat(txt, "ay");
-				cnt = cnt + 2;
+		// EI,EY
+		else if ((scode1[pos] == 'E' && scode1[pos+1] == 'I') || (scode1[pos] == 'E' && scode1[pos+1] == 'Y')) {
+			strcat(scode2, "AY");
+			pos+=2;
 		}
-		// sc,sz,cz,tz,ts
-		else if ((target[cnt] == 's' && target[cnt + 1] == 'c') ||
-			(target[cnt] == 's' && target[cnt + 1] == 'z') ||
-			(target[cnt] == 'c' && target[cnt + 1] == 'z') ||
-			(target[cnt] == 't' && target[cnt + 1] == 'z') ||
-			(target[cnt] == 't' && target[cnt + 1] == 's')) {
-				strcat(txt, "c");
-				cnt = cnt + 2;
+		// SC,SZ,CZ,TZ,TS
+		else if ((scode1[pos] == 'S' && scode1[pos+1] == 'C') ||
+			(scode1[pos] == 'S' && scode1[pos+1] == 'Z') ||
+			(scode1[pos] == 'C' && scode1[pos+1] == 'Z') ||
+			(scode1[pos] == 'T' && scode1[pos+1] == 'Z') ||
+			(scode1[pos] == 'T' && scode1[pos+1] == 'S')) {
+				strcat(scode2, "C");
+				pos+=2;
 		}
-
 		else {
 			// Wenn Buchstabenpaar nicht nach Regeln kodiert werden konnte
 			// nur einen Buchstaben kopieren und weiter ab dem nächsten mit Paarsuche
-			tmp[0]=target[cnt];
+			tmp[0]=scode1[pos];
 			tmp[1]='\0';
-			strcat (txt, tmp);
-			cnt = cnt + 1;
+			strcat (scode2, tmp);
+			pos++;
 		}
 	}
 
-	// 2. Durchgang einzelne Buchstaben ersetzten/kodieren
-	cnt=0;
-	while (txt[cnt] != '\0') {
-		//z,k,g,q
-		if (txt[cnt] == 'z' || txt[cnt] == 'k' || txt[cnt] == 'g' || txt[cnt] == 'q') txt[cnt] = 'c';
-		//u,i,j
-		else if (txt[cnt] == 'u' || txt[cnt] == 'i' || txt[cnt] == 'j') txt[cnt] = 'y';
-		//f,w,v
-		else if (txt[cnt] == 'f' || txt[cnt] == 'w') txt[cnt] = 'v';
-		//a
-		else if (txt[cnt] == 'a') txt[cnt] = 'e';
-		//p
-		else if (txt[cnt] == 'p') txt[cnt] = 'b';
-		//t
-		else if (txt[cnt] == 't') txt[cnt] = 'd';
-		cnt++;
+	// 2. Durchgang einzelne Buchstaben ersetzten/kodieren in scode2
+	pos=0;
+	while (scode2[pos] != '\0') {
+		switch (scode2[pos]) {
+			case 'Z': case 'K': case 'G': case 'Q':
+				scode2[pos] = 'C';
+				break;
+			case 'U': case 'I': case 'J':
+				scode2[pos] = 'Y';
+				break;
+			case 'F': case 'W':
+				scode2[pos] = 'V';
+				break;
+			case 'A':
+				scode2[pos] = 'E';
+				break;
+			case 'P':
+				scode2[pos] = 'B';
+				break;
+			case 'T':
+				scode2[pos] = 'D';
+				break;
+		}
+		pos++;
 	}
 
-	// 3. Durchgang alle doppelten Zeichen entfernen
-	kill_double_onebytechars (txt);
+	// 3. Durchgang alle doppelten Zeichen entfernen in scode2
+	delete_multiplechar(scode2);
 
-	// 4. Durchgang alles in Rückgabestring kopieren, unerlaubte Zeichen dabei außlassen & 0 zu Ö wandeln, Großschreiben
-	cnt=0;
-	dest[0]='\0';
-	while (txt[cnt] != '\0') {
-		if (txt[cnt] == 'a' || txt[cnt] == 'b' || txt[cnt] == 'c' || txt[cnt] == 'd' || txt[cnt] == 'l' ||
-			txt[cnt] == 'm' || txt[cnt] == 'n' || txt[cnt] == 'o' || txt[cnt] == 'r' || txt[cnt] == 's' ||
-			txt[cnt] == 'u' || txt[cnt] == 'v' || txt[cnt] == 'w' || txt[cnt] == 'x' || txt[cnt] == 'y') {
-				tmp[0] = txt[cnt];
+	// 4. Durchgang alles von scode2 nach scode1 kopieren, unerlaubte Zeichen dabei außlassen & 0 zu Ö wandeln
+	pos=0;
+	scode1[0]='\0';
+	while (scode2[pos] != '\0') {
+		if (scode2[pos] == 'A' || scode2[pos] == 'B' || scode2[pos] == 'C' || scode2[pos] == 'D' || scode2[pos] == 'L' ||
+			scode2[pos] == 'M' || scode2[pos] == 'N' || scode2[pos] == 'O' || scode2[pos] == 'R' || scode2[pos] == 'S' ||
+			scode2[pos] == 'U' || scode2[pos] == 'V' || scode2[pos] == 'W' || scode2[pos] == 'X' || scode2[pos] == 'Y') {
+				tmp[0] = scode2[pos];
 				tmp[1] = '\0';
-				strcat (dest, tmp);
+				strcat (scode1, tmp);
 		}
-		else if (txt[cnt] == '0') strcat (dest, "Ö\0");
-		cnt++;
+		else if (scode2[pos] == '0') strcat (scode1, "Ö");
+		pos++;
 	}
-	conv_to_upper (dest);
+
+	// Rückgabe füllen
+	strcpy(dest, scode1);
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Soundex Verfahren
-static void conv_to_soundex(const char *target, char *dest)
-{
-	int		cnt=1;
-	char	txt[BUFFER_CODE_SIZE];
-	int		len;
 
-	// 1. Zeichen einfach kopieren in Rückgabe, Großschreiben
-	dest[0] = target[0];
-	dest[1] = '\0';
-	conv_to_upper (dest);
 
-	// ab 2. Zeichen alles rüberkopieren nach txt
-	while (target[cnt] != '\0') {
-		txt[cnt - 1] = target[cnt];
-		cnt++;
-	}
-	txt[cnt - 1]='\0';
-
-	// Ersetzungsregeln auf txt anwenden
-	cnt=0;
-	while (txt[cnt] != '\0') {
-		if (txt[cnt] == 'a' || txt[cnt] == 'e' || txt[cnt] == 'h' || txt[cnt] == 'i' ||
-		    txt[cnt] == 'o' || txt[cnt] == 'u' || txt[cnt] == 'w' || txt[cnt] == 'y') txt[cnt] = '0';
-		else if (txt[cnt] == 'b' || txt[cnt] == 'f' || txt[cnt] == 'p' || txt[cnt] == 'v') txt[cnt] = '1';
-		else if (txt[cnt] == 'c' || txt[cnt] == 'g' || txt[cnt] == 'j' || txt[cnt] == 'k' ||
-			 txt[cnt] == 'q' || txt[cnt] == 's' || txt[cnt] == 'x' || txt[cnt] == 'z') txt[cnt] = '2';
-		else if (txt[cnt] == 'd' || txt[cnt] == 't') txt[cnt] = '3';
-		else if (txt[cnt] == 'l') txt[cnt] = '4';
-		else if (txt[cnt] == 'm' || txt[cnt] == 'n') txt[cnt] = '5';
-		else if (txt[cnt] == 'r') txt[cnt] = '6';
-		cnt++;
-	}
-
-	// Doppelte entfernen, dann 0en entfernen, an Rückgabe hängen, auf 4 Stellen kürzen/0en anhängen
-	kill_double_onebytechars (txt);
-	kill_onebytechars (txt, '0');
-	strcat (dest, txt);
-	len=strlen(dest);
-
-	if (len == 1) strcat (dest, "000");
-	else if (len == 2) strcat (dest, "00");
-	else if (len == 3) strcat (dest, "0");
-	else if (len > 4) dest[4]='\0';
-}
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Extended Soundex Verfahren
-static void conv_to_exsoundex(const char *target, char *dest)
-{
-	int		cnt=0;
-	char	txt[BUFFER_CODE_SIZE];
-
-	// Quelle kopieren und Zeichen kodieren/ersetzten
-	strcpy (txt, target);
-	while (txt[cnt] != '\0') {
-		if (txt[cnt] == 'a' || txt[cnt] == 'e' || txt[cnt] == 'h' || txt[cnt]== 'i' ||
-		    txt[cnt] == 'o' || txt[cnt] == 'u' || txt[cnt] == 'w' || txt[cnt]== 'y') txt[cnt] = '0';
-		else if (txt[cnt] == 'b' || txt[cnt] == 'p') txt[cnt] = '1';
-		else if (txt[cnt] == 'v' || txt[cnt] == 'f') txt[cnt] = '2';
-		else if (txt[cnt] == 'c' || txt[cnt] == 'k' || txt[cnt] == 's') txt[cnt] = '3';
-		else if (txt[cnt] == 'g' || txt[cnt] == 'j') txt[cnt] = '4';
-		else if (txt[cnt] == 'q' || txt[cnt] == 'x' || txt[cnt] == 'z') txt[cnt] = '5';
-		else if (txt[cnt] == 'd' || txt[cnt] == 't') txt[cnt] = '6';
-		else if (txt[cnt] == 'l') txt[cnt] = '7';
-		else if (txt[cnt] == 'm' || txt[cnt] == 'n') txt[cnt] = '8';
-		else if (txt[cnt] == 'r') txt[cnt] = '9';
-		cnt++;
-	}
-
-	// Doppelte entfernen, 0en entfernen
-	kill_double_onebytechars (txt);
-	kill_onebytechars (txt, '0');
-
-	// Ausgabe mit 5 Stellen 0 füllen, txt rüberkopieren auf 5 Stellen kürzen
-	strcpy (dest, "00000");
-	cnt=0;
-	while (txt[cnt] != '\0') {
-		dest[cnt] = txt[cnt];
-		cnt++;
-	}
-	dest[5] = '\0';
-}
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Öffentliche Funktion
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Wandelt einen übergebenen Namen/Wort in phonetischen Code
-int phoneconvert (const char *src, char *dest, const int phonemode)
-{
-	// Rückgabe leeren
-	dest[0]='\0';
-		
-	// Ende wenn target leer, zu Lang oder ungültiges Wort
-	if (src[0] == '\0') return CONV_STAT_NO_CODE;
-	if (strlen(src) >= (BUFFER_NAME_SIZE - 1)) return CONV_STAT_TO_LONG;
-	if (check_word_german(src) == CONV_STAT_NO_WORD) return CONV_STAT_NO_WORD;
-	
-	// target kopieren, konvertieren in Kleinbuchstaben, Umlaute konvertieren
-	char tmp[BUFFER_NAME_SIZE];
-	strcpy (tmp, src);
-	conv_to_lower (tmp);
-	conv_uml (tmp);
-		
-	// Phonetischen Code je nach Übergabeparam erzeugen
-	if (phonemode == CONV_MODE_COLOGNE) conv_to_cologne (tmp, dest);
-	else if (phonemode == CONV_MODE_PHONEM) conv_to_phonem (tmp, dest);
-	else if (phonemode == CONV_MODE_SOUNDEX) conv_to_soundex (tmp, dest);
-	else if (phonemode == CONV_MODE_EXSOUNDEX) conv_to_exsoundex (tmp, dest);
-	else return CONV_STAT_NO_CODE;
-	
-	// Wenn gültiger Code erzeugt, alles OK, sonst CONV_STAT_NO_CODE zurückgeben
-	if (dest[0] == '\0') return CONV_STAT_NO_CODE;
-	else return CONV_STAT_OK;
-}
