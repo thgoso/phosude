@@ -143,10 +143,7 @@ static void show_examples (void)
 // Sowie Text aus bei Fehler
 void clean_exit (const int status)
 {
-	// Speicher Namensliste freigeben
-	// Falls stdin noch Daten liefert... warten bis nix mehr kommt
 	if (Names_List != NULL) free(Names_List);
-	while (fgets(Cur_Line_Text, LINE_BUFFER_SIZE, stdin) != NULL);
 		
 	if (status == STAT_TO_SHORT) fprintf(stderr, "phoneshow-de: Name zu kurz zur sinnvollen Suche !\n");
 	else if (status == STAT_TO_LONG) fprintf(stderr, "phoneshow-de: Name zu lang !\n");
@@ -681,6 +678,8 @@ int main (int argc, char* argv[])
 		} 
 		// Bei Normalnamen alles füllen
 		else {
+			strcpy(Names_List[name_cnt].name_lower, Names_List[name_cnt].name_norm);
+			to_lower(Names_List[name_cnt].name_lower);
 			Names_List[name_cnt].is_minusname = false;
 			if (Phone_Ops.f == true) 
 			Names_List[name_cnt].p_color = color_table[color_cnt % NUMBER_OF_COLORS];
