@@ -2,13 +2,13 @@
 #define PHONETICS
 
 // Buffer-Größen für Strings zu Worten und phonetischen Codes
-#define BUFFER_WORD_SIZE		64
-#define BUFFER_CODE_SIZE		(BUFFER_WORD_SIZE * 4)
+#define BUFFER_WORD_SIZE        64
+#define BUFFER_CODE_SIZE        (BUFFER_WORD_SIZE * 4)
 
 // Konvertierungsfunktionen
-// Übergabe:	Pointer auf zu konvertierendes Wort [*src]
-//				EIN EINZELNES DEUTSCHES WORT
-// Rückgabe:	phonetischen Code in [*dest]
+// Übergabe:    Pointer auf zu konvertierendes Wort [*src]
+//              EIN EINZELNES DEUTSCHES WORT
+// Rückgabe:    phonetischen Code in [*dest]
 //
 // *dest muß außreichend groß dimensioniert sein (BUFFER_CODE_SIZE)
 
@@ -18,10 +18,10 @@
 // wird in *dest ein Leerstring '\0' zurückgegeben
 
 
-void phoneconvert_soundex 	(const char *src, char *dest);
-void phoneconvert_exsoundex	(const char *src, char *dest);
-void phoneconvert_cologne	(const char *src, char *dest);
-void phoneconvert_phonem	(const char *src, char *dest);
+void phoneconvert_soundex   (const char *src, char *dest);
+void phoneconvert_exsoundex (const char *src, char *dest);
+void phoneconvert_cologne   (const char *src, char *dest);
+void phoneconvert_phonem    (const char *src, char *dest);
  
 
 #endif //PHONETICS
