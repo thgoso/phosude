@@ -47,33 +47,40 @@ Eine der 3 Ausgabevarianten kann gewählt werden. Ohne Parameterangabe zur Ausga
 Ohne Parameterangabe sind Farbausgabe und Ausgabe der Legende ein- und Zeilennummerierung ausgeschaltet.
 
 ## Verwendung
-- phoneshow-de Müller
-
+```
+phoneshow-de Müller
+```
 Findet NUR Müller, MÜLLER und müller Zwischen Groß- und Kleinschreibung wird nicht unterschieden.
-- phoneshow-de -l Müller
-
+```
+phoneshow-de -l Müller
+```
 Findet alle Worte die sich in max. einem Buchstaben unterscheiden, einen Buchstaben mehr oder
 einen weniger haben. Eine phonetische Suche findet hier nicht statt. Findet Mülker Rüller Kmüller
-- phoneshow-de -l -l Müller
-
+```
+phoneshow-de -l -l Müller
+```
 Jedes -l erhöht die Anzahl in der sich die Namen unterscheiden dürfen. Mit -l -l werden auch Worte
 gefunden die sich um zwei unterscheiden, also 2 Buchstaben mehr, weniger oder andere haben.
 Ebenfalls ohne phonetische Suche. Findet Mücker Küllar Müxxer Müllcker
 Sinnvoll sind max. 2-3 -l Mehr ist möglich aber nicht sehr zweckdienlich.
-- phoneshow-de -k Müller
-
+```
+phoneshow-de -k Müller
+```
 Findet alle Namen die nach Kölner Phonetik ähnlich zu Müller sind:
 Müller, Mueller, Myller, Müllar, Mülherr, Nüller, Nyller
-- phoneshow-de -p Müller
-
+```
+phoneshow-de -p Müller
+```
 Das selbe aber mit phonetischem Suchverfahren Phonem:
 Müller, Mueller, Myller, Müllar, Mülherr werden damit gefunden, Nüller und Nyller aber nicht.
-- phoneshow-de -k -p -s -e Müller
-
+```
+phoneshow-de -k -p -s -e Müller
+```
 Wendet alle phonetischen Verfahren an: Kölner Phonetik, Phonem, Soundex, Extended Soundex.
 Damit werden so ziemlich alle Varianten gefunden.
-- phoneshow-de -k -l Müller
-
+```
+phoneshow-de -k -l Müller
+```
 Wendet Suchverfahren Kölner Phonetik an und schiebt den erzeugten Code durch ein Levenshtein Filter.
 Der phonetische Code für Müller ist in dem Fall 657. Nun werden alle Worte gefunden deren Code sich
 an einer Stelle unterscheidet oder deren Code ein Zeichen mehr oder weniger hat.
@@ -82,31 +89,38 @@ Jedes zusätzliche -l erhört die Zahl an möglichen Abweichungen. 2-3 -l sind O
 
 #### Name ausschließen mit _Name:
 Bei der Suche können EXAKTE Schreibweisen ausgeschlossen werden, wenn man ein _ voranstellt.
-- phoneshow-de -k -p Müller_Mueller
-
+```
+phoneshow-de -k -p Müller_Mueller
+```
 Zeigt alle Namen die phonetisch ähnlich zu Müller sind, schließ aber die Schreibweise Mueller aus.
 Bei den verbotenen Namen wird zwischen Groß- und Kleinschreibung unterschieden. Das heißt:
-Gefunden werden Müller Möller Myller NICHT Mueller ABER mueller schon (weil Kleingeschrieben).
-- phoneshow-de Müller_Müller
-
+Gefunden werden Müller Möller Myller NICHT ~~Mueller~~ ABER mueller schon (weil Kleingeschrieben).
+```
+phoneshow-de Müller_Müller
+```
 Zeigt überhaupt nichts weil die phonetische Suche inaktiv ist.
-- phoneshow-de -k Müller_Müller
-
+```
+phoneshow-de -k Müller_Müller
+```
 Zeigt alle phonetisch ähnlichen zu Müller, aber nicht die Schreibweise Müller selbst.
 
 ### Praxisbeispiele:
-- cat adressbuch.txt | phoneshow-de -k -p -s -e Udhe
-
+```
+cat adressbuch.txt | phoneshow-de -k -p -s -e Udhe
+```
 Soll uns alle Udhe und ähnliche zeigen. Allerdings findet man auch hunderte Otto, die stören und nicht benötigt werden.
-- cat adressbuch.txt | phoneshow-de -k -p Udhe _Otto
-
+```
+cat adressbuch.txt | phoneshow-de -k -p -s -e Udhe _Otto
+```
 Filtert alle Otto aus und wir bekommen weniger Funde die schon ehr zielführend sind.
-- cat adressbuch.txt | phoneshow-de -k -p -s -e -n -f Thielemann > fundzeilen.txt
-
+```
+cat adressbuch.txt | phoneshow-de -k -p -s -e -n -f Thielemann > fundzeilen.txt
+```
 Nutz alle phonetischen Suchverfahren, schaltet Zeilennummerierung ein, Farbe aus und schreibt
 alle Zeilen in denen sich etwas ähnliches findet nummeriert in fundzeilen.txt.
-- cat adressbuch.txt | phoneshow-de -k -p -s -e -w -f -x Meier Müller Schulz | sort | uniq -c
-
+```
+cat adressbuch.txt | phoneshow-de -k -p -s -e -w -f -x Meier Müller Schulz | sort | uniq -c
+```
 Findet alle phonetisch ähnlichen zu Meier Müller Schulz.
 Schaltet Ausgabe von Farbe und Legende ab, sodaß lediglich die Funde ausgegeben werden.
 Leitet durch sort und läßt von uniq zählen, sodaß eine Häufigkeitsliste ausgegeben wird.
