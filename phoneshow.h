@@ -56,7 +56,7 @@ typedef struct {
   bool  n;                                    // Zeilennummerierung
   bool  f;                                    // Farbe
   bool  x;                                    // Ausgabe Legende
-	int   l;                                    // erlaubte Lev-Dist
+  int   l;                                    // erlaubte Lev-Dist
 } phoneops_t;
 
 // Für Ausgabeformat (true=Funktion ein)
@@ -65,8 +65,6 @@ typedef struct {
   bool  z;																		// Nur Fundzeilen ausgeben
   bool  w;																		// Nur Fundworte ausgeben
 } outops_t;
-
-
 
 
 #endif //PHONESHOW

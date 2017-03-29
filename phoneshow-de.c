@@ -3,13 +3,13 @@ phoneshow-de
 Führt eine Phonetische Suche in Text aus
 Suchverfahren sind:
 Kölner Phonetik   für deutsche Namen nach eigener Erfahrung am optimalsten
-          Code Numerisch, variable Länge
-Phonem        in versch. dBase Varianten implementiert
-          Code Buchstaben, variable Länge
-Soundex       Für deutsche Namen nicht ganz geeignet, aber Standard bei Genealogie(programmen)
-          Alphanumerischer Code, fixe Länge, Format Buchstabe gefolgt von 3 Ziffern
+                  Code Numerisch, variable Länge
+Phonem            in versch. dBase Varianten implementiert
+                  Code Buchstaben, variable Länge
+Soundex           Für deutsche Namen nicht ganz geeignet, aber Standard bei Genealogie(programmen)
+                  Alphanumerischer Code, fixe Länge, Format Buchstabe gefolgt von 3 Ziffern
 Extended Soundex  Erweiterung von Soundex
-          Numerischer Code, fixe Länge, 5 Ziffern
+                  Numerischer Code, fixe Länge, 5 Ziffern
 
 
 Copyright (C) 2015-2017, Thomas Gollmer, th_goso@freenet.de
@@ -134,7 +134,7 @@ static void show_examples (void)
   "\033[7mcat datei.txt | phoneshow-de -k -p -s -e -w -f -x Meier Müller Schulz | sort | uniq -c\033[m\n"
   "Findet alle phonetisch ähnlichen zu Meier Müller Schulz.\n"
   "Schaltet Ausgabe von Farbe und Legende ab, sodaß lediglich die Funde ausgegeben werden.\n"
-  "Leit durch sort und läßt von uniq zählen, sodaß eine Häufigkeitsliste ausgegeben wird.\n\n");
+  "Leitet durch sort und läßt von uniq zählen, sodaß eine Häufigkeitsliste ausgegeben wird.\n\n");
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Gibt genutzten Speicher für Namesnliste wieder frei
@@ -474,7 +474,7 @@ static void show_footer (const size_t foundcount)
     printf ("\nSuche: Einfache Textsuche");
   }
   else if (Phone_Ops.k == false && Phone_Ops.p == false && Phone_Ops.s == false && Phone_Ops.e == false && Phone_Ops.l != 0) {
-    printf ("\nTyp:   Textsuche mit Levenshtein-Distanz von nicht mehr als %d", Phone_Ops.l);
+    printf ("\nTyp:   Textsuche mit Levenshtein-Distanz von nicht mehr als %i", Phone_Ops.l);
   }
   else {
     printf("\nTyp:   Phonetische Suche ");
@@ -482,7 +482,7 @@ static void show_footer (const size_t foundcount)
     if (Phone_Ops.p == true) printf ("(Phonem) ");
     if (Phone_Ops.s == true) printf ("(Soundex) ");
     if (Phone_Ops.e == true) printf ("(Extended Soundex) ");
-    if (Phone_Ops.l != 0) printf ("\n       mit Levenshtein-Distanz von nicht mehr als %d im phonetischen Code", Phone_Ops.l);
+    if (Phone_Ops.l != 0) printf ("\n       mit Levenshtein-Distanz von nicht mehr als %i im phonetischen Code", Phone_Ops.l);
   }
 
   //Funde
@@ -497,8 +497,8 @@ static bool print_mode_a (void)
   bool    phone_stat;
   int     name_number;
   size_t  foundcount=0;
-  
-  while (1) {
+    
+   while (1) {
     if (read_line() == false) break;                                        // Nächste Zeile lesen, Ende wenn alle durch
     read_word(false);                                                       // Wortlesefunktion init 
     if (Phone_Ops.n == true) printf("%zd ", Cur_Line_Number);               // Zeilennummer ausgeben falls erwünscht
@@ -510,9 +510,10 @@ static bool print_mode_a (void)
         phone_stat = check_names_list_phone_equal(&name_number);            // Phonetisch Vergleichen mit Namensliste
         if (phone_stat == true) {                                           // Wir haben einen Fund
           foundcount++;
-          printf("%s%s\033[m", Names_List[name_number].p_color, Cur_Word);  // Ausgabe farbig
+          if (Phone_Ops.f == true)printf("%s%s\033[m", Names_List[name_number].p_color, Cur_Word);
+          else printf("%s", Cur_Word);
         }
-        else printf("%s", Cur_Word);                                        // Ausgabe unbunt
+        else printf("%s", Cur_Word);
       }
     }
     printf("\n");                                                           // Zeile ist durch
@@ -559,9 +560,10 @@ static bool print_mode_z (void)
           phone_stat = check_names_list_phone_equal(&name_number);          // Phonetisch Vergleichen mit Namensliste
           if (phone_stat == true) {                                         // Wir haben einen Fund
             foundcount++;
-            printf("%s%s\033[m", Names_List[name_number].p_color, Cur_Word);// Ausgabe farbig
+            if (Phone_Ops.f == true)printf("%s%s\033[m", Names_List[name_number].p_color, Cur_Word);
+            else printf("%s", Cur_Word);
           }
-          else printf("%s", Cur_Word);                                      // Ausgabe unbunt
+          else printf("%s", Cur_Word);
         }
       }
       printf("\n");                                                         // Zeile ist durch
@@ -572,7 +574,6 @@ static bool print_mode_z (void)
   if (foundcount > 0) return true;                                          // Ende mit true wenn Fund(e) waren
   else return false;
 }
-
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Ausgabemodus w
 // nur Fundworte anzeigen
