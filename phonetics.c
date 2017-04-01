@@ -13,13 +13,8 @@ Erzeugen von phonetischen Codes
   zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.org/licenses/>.
 */
 
-
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <inttypes.h>
-#include "phonetics.h"
-
+#include "buffer_sizes.h"
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Private Funktionen zur Stringmanipulation
@@ -39,8 +34,8 @@ static void preconvert (char *s)
 {
   const char  uml[7][3] = {{"Ä"}, {"Ö"}, {"Ü"}, {"ä"}, {"ö"}, {"ü"}, {"ß"}};
   const char  rep[7][3] = {{"AE"},{"OE"},{"UE"},{"AE"},{"OE"},{"UE"},{"SS"}};
-  uint8_t     cnt;
-  uint8_t     replaced;
+  int         cnt;
+  int         replaced;
   size_t      pos=0;
 
   while (s[pos] != '\0') {
@@ -131,7 +126,7 @@ void phoneconvert_soundex (const char *src, char *dest)
   size_t  pos=0;
 
   dest[0]='\0';                                  // Rückgabe leeren
-  if (strlen(src) >= BUFFER_WORD_SIZE) return ;  // Ende wenn Übergabewort zu lang
+  if (strlen(src) >= BUFFER_SIZE_WORD) return ;  // Ende wenn Übergabewort zu lang
   strcpy(dest, src);                             // src nach dest kopieren
   preconvert(dest);                              // Vorkonvertieren, Ende wenn Leerstring
   if (dest[0] == '\0') return ;
@@ -187,7 +182,7 @@ void phoneconvert_exsoundex (const char *src, char *dest)
   size_t  pos=0;
   
   dest[0]='\0';                                  // Rückgabe leeren
-  if (strlen(src) >= BUFFER_WORD_SIZE) return ;  // Ende wenn Übergabewort zu lang
+  if (strlen(src) >= BUFFER_SIZE_WORD) return ;  // Ende wenn Übergabewort zu lang
   strcpy(dest, src);                             // src nach dest kopieren
   preconvert(dest);                              // Vorkonvertieren, Ende wenn Leerstring
   if (dest[0] == '\0') return ;
@@ -246,15 +241,15 @@ void phoneconvert_exsoundex (const char *src, char *dest)
 // Kölner Phonetik Verfahren
 void phoneconvert_cologne (const char *src, char *dest)
 {
-  char    scode1[BUFFER_CODE_SIZE];
-  char    scode2[BUFFER_CODE_SIZE];
+  char    scode1[BUFFER_SIZE_CODE];
+  char    scode2[BUFFER_SIZE_CODE];
   char    first;
   char    group[3]; 
   size_t  size;
   size_t  pos;
 
   dest[0]='\0';                                  // Rückgabe leeren
-  if (strlen(src) >= BUFFER_WORD_SIZE) return ;  // Ende wenn Übergabewort zu lang
+  if (strlen(src) >= BUFFER_SIZE_WORD) return ;  // Ende wenn Übergabewort zu lang
   strcpy(scode1, src);                           // src nach scode1 kopieren
   preconvert(scode1);                            // Vorkonvertieren, Ende wenn Leerstring
   if (scode1[0] == '\0') return ;
@@ -387,13 +382,13 @@ void phoneconvert_cologne (const char *src, char *dest)
 // Phonem Verfahren
 void phoneconvert_phonem (const char *src, char *dest)
 {
-  char    scode1[BUFFER_CODE_SIZE];
-  char    scode2[BUFFER_CODE_SIZE];
+  char    scode1[BUFFER_SIZE_CODE];
+  char    scode2[BUFFER_SIZE_CODE];
   char    tmp[5];
   size_t  pos=0;
 
   dest[0]='\0';                                  // Rückgabe leeren
-  if (strlen(src) >= BUFFER_WORD_SIZE) return ;  // Ende wenn Übergabewort zu lang
+  if (strlen(src) >= BUFFER_SIZE_WORD) return ;  // Ende wenn Übergabewort zu lang
   strcpy(scode1, src);                           // src nach scode1 kopieren
   preconvert(scode1);                            // Vorkonvertieren, Ende wenn Leerstring
   if (scode1[0] == '\0') return ;
@@ -505,9 +500,8 @@ void phoneconvert_phonem (const char *src, char *dest)
     pos++;
   }
 
-  // Rückgabe füllen
-  strcpy(dest, scode1);
+  // Rückgabe füllen sofern gültiger Code erzeugt wird
+  // Sonst wird "---" zurückgegeben
+  if (scode1[0] == '\0') strcpy(dest, "---");
+  else strcpy(dest, scode1);
 }
-
-
-

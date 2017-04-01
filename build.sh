@@ -10,18 +10,27 @@ fi
 echo
 echo "Kompiliere..."
 gcc -Wall -Wextra -O3 -c phonetics.c -o phonetics.o
-gcc -Wall -Wextra -O3 -c phonecode-de.c -o phonecode-de.o
-gcc -Wall -Wextra -O3 -c phonecomp-de.c -o phonecomp-de.o
-gcc -Wall -Wextra -O3 -c phoneshow-de.c -o phoneshow-de.o
-gcc -Wall -Wextra phonecode-de.o phonetics.o -o phonecode-de
-gcc -Wall -Wextra phonecomp-de.o phonetics.o -o phonecomp-de
-gcc -Wall -Wextra phoneshow-de.o phonetics.o -o phoneshow-de
+gcc -Wall -Wextra -O3 -c phonecode.c -o phonecode.o
+gcc -Wall -Wextra -O3 -c phonecomp.c -o phonecomp.o
+gcc -Wall -Wextra -O3 -c phoneshow.c -o phoneshow.o
+gcc -Wall -Wextra -O3 -c phoneshow_read.c -o phoneshow_read.o
+gcc -Wall -Wextra -O3 -c phoneshow_write.c -o phoneshow_write.o
+gcc -Wall -Wextra -O3 -c phoneshow_str.c -o phoneshow_str.o
+gcc -Wall -Wextra -O3 -c phoneshow_comp.c -o phoneshow_comp.o
+echo "Linke..."
+gcc -Wall -Wextra phonetics.o phonecode.o -o phonecode-de
+gcc -Wall -Wextra phonetics.o phonecomp.o -o phonecomp-de
+gcc -Wall -Wextra phonetics.o phoneshow.o phoneshow_read.o phoneshow_write.o phoneshow_str.o phoneshow_comp.o -o phoneshow-de
 echo "...Fertig"
 
 rm -f phonetics.o
-rm -f phonecode-de.o
-rm -f phonecomp-de.o
-rm -f phoneshow-de.o
+rm -f phonecode.o
+rm -f phonecomp.o
+rm -f phoneshow.o
+rm -f phoneshow_read.o
+rm -f phoneshow_write.o
+rm -f phoneshow_str.o
+rm -f phoneshow_comp.o
 
 exit 0
 
