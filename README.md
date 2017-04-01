@@ -37,7 +37,8 @@ Wendet Levenshtein-Filter auf die Worte an, wenn kein phonetisches Verfahren gew
 - **-z** nur Fundzeilen ausgeben
 - **-w** nur Fundworte ausgeben
 
-Eine der 3 Ausgabevarianten kann gewählt werden. Ohne Parameterangabe zur Ausgabe ist -z aktiv.
+Eine der 3 Ausgabevarianten kann gewählt werden. Ohne Parameterangabe zur Ausgabe ist -z aktiv. Zusätzlich kann der Verbose-Modus eingeschaltet werden.
+- **-v** Analysedaten anzeigen
 
 ##### Optionsschalter Formatierung
 - **-n** Zeilennummerierung einschalten
