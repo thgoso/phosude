@@ -447,7 +447,9 @@ void phoneconvert_phonem (const char *src, char *dest)
       strcat(scode2, "KW");
       pos+=2;
     }
-    // OE
+    // OE muß eigentlich zu Ö werden, was aber Doppelbytezeichen wäre
+    // Das ließe sich aber mit Routine zum entfernen von Doppelten Zeichen nicht
+    // Fehlerfrei abarbeiten, daher machen wir einfach erst mal eine 0 draus
     else if (scode1[pos] == 'O' && scode1[pos+1] == 'E') {
       strcat(scode2, "0");
       pos+=2;
@@ -513,9 +515,11 @@ void phoneconvert_phonem (const char *src, char *dest)
   }
 
   // 3. Durchgang alle doppelten Zeichen entfernen in scode2
+  // Da das Ö als 0 codiert ist, bekommen wir doppelte davon einfach weg
   delete_multiplechar(scode2);
 
-  // 4. Durchgang alles von scode2 nach scode1 kopieren, unerlaubte Zeichen dabei außlassen & 0 zu Ö wandeln
+  // 4. Durchgang alles von scode2 nach scode1 kopieren, unerlaubte Zeichen dabei außlassen
+  // Jetzt erst aus 0 das endgültige Ö machen
   pos=0;
   scode1[0]='\0';
   while (scode2[pos] != '\0') {
