@@ -16,9 +16,9 @@ Erzeugen von phonetischen Codes
 #include <string.h>
 #include "buffer_sizes.h"
 
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Private Funktionen zur Stringmanipulation
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Vorkonvertierroutine
 // Wandelt ein übergebenes deutsches Wort von UTF-8 nach ASCII GROSSBUCHSTABEN
 // Umlaute: Ä,ä = AE
@@ -67,17 +67,17 @@ static void preconvert (char *s)
     return;
   }
 }
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // entfernt einzelne Zeichen im String die dem übergebenen Zeichen (c) entsprechen,
 // sodaß dieses Zeichen gelöscht wird
 static void delete_char (char *s, const char c)
 {
   size_t  pos_read=0;
   size_t  pos_write=0;
-  
-  // Fehlerhafte Übergabe 
+
+  // Fehlerhafte Übergabe
   if (c == '\0') return;
-  
+
   while (1) {
     if (s[pos_read] == '\0') {
       s[pos_write] = '\0';
@@ -91,19 +91,19 @@ static void delete_char (char *s, const char c)
     }
   }
 }
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // entfernt alle mehrfach hintereinander auftretenden Zeichen im Text, sodaß nur noch je eines vorhanden ist
 static void delete_multiplechar (char *s)
 {
   size_t  pos_read=0;
   size_t  pos_write=0;
   char    last='\0';
-  
+
   while (1) {
     if (s[pos_read] == '\0') {
       s[pos_write] = '\0';
       break;
-    }     
+    }
     else if (s[pos_read] == last) {
       pos_read++;
     }
@@ -115,24 +115,30 @@ static void delete_multiplechar (char *s)
     }
   }
 }
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Öffentliche Funktionen Phonetische Codierverfahren
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Soundex Verfahren
+// Wenn Wortlänge < BUFFER_SIZE_WORD
+// Paßt Code ebenfalls in einen Buffer der Größe
 void phoneconvert_soundex (const char *src, char *dest)
 {
   char    first;
   size_t  size;
   size_t  pos=0;
 
-  dest[0]='\0';                                  // Rückgabe leeren
-  if (strlen(src) >= BUFFER_SIZE_WORD) return ;  // Ende wenn Übergabewort zu lang
-  strcpy(dest, src);                             // src nach dest kopieren
-  preconvert(dest);                              // Vorkonvertieren, Ende wenn Leerstring
-  if (dest[0] == '\0') return ;
-  first=dest[0];                                 // 1. Zeichen aus dest merken
-  dest[0]='-';                                   // und in dest mit '-' ausmaskieren
-  
+  // Rückgabe leeren
+  dest[0]='\0';
+
+  if (strlen(src) >= BUFFER_SIZE_WORD) return;
+  strcpy(dest, src);
+  preconvert(dest);
+  if (dest[0] == '\0') return;
+
+  // 1. Zeichen aus dest merken und in dest mit '-' ausmaskieren
+  first=dest[0];
+  dest[0]='-';
+
   // Ersetzungsregeln auf dest anwenden
   while (dest[pos] != '\0') {
     switch (dest[pos]) {
@@ -164,7 +170,7 @@ void phoneconvert_soundex (const char *src, char *dest)
   // Doppelte entfernen, dann 0en entfernen
   delete_multiplechar(dest);
   delete_char(dest, '0');
-  
+
   // gemerktes 1. Zeichen wieder nach dest schieben... Alles auf 4 Stellen kürzen/0en anhängen
   dest[0]=first;
   size=strlen(dest);
@@ -174,18 +180,22 @@ void phoneconvert_soundex (const char *src, char *dest)
   else if (size == 3) strcat (dest, "0");
   else if (size > 4) dest[4]='\0';
 }
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Extended Soundex Verfahren
+// Wenn Wortlänge < BUFFER_SIZE_WORD
+// Paßt Code ebenfalls in einen Buffer der Größe
 void phoneconvert_exsoundex (const char *src, char *dest)
 {
   size_t  size;
   size_t  pos=0;
-  
-  dest[0]='\0';                                  // Rückgabe leeren
-  if (strlen(src) >= BUFFER_SIZE_WORD) return ;  // Ende wenn Übergabewort zu lang
-  strcpy(dest, src);                             // src nach dest kopieren
-  preconvert(dest);                              // Vorkonvertieren, Ende wenn Leerstring
-  if (dest[0] == '\0') return ;
+
+  // Rückgabe leeren
+  dest[0]='\0';
+
+  if (strlen(src) >= BUFFER_SIZE_WORD) return;
+  strcpy(dest, src);
+  preconvert(dest);
+  if (dest[0] == '\0') return;
 
   // Ersetzungsregeln auf dest anwenden
   while (dest[pos] != '\0') {
@@ -223,7 +233,7 @@ void phoneconvert_exsoundex (const char *src, char *dest)
     }
     pos++;
   }
-  
+
   // Doppelte entfernen, dann 0en entfernen
   delete_multiplechar(dest);
   delete_char(dest, '0');
@@ -237,30 +247,37 @@ void phoneconvert_exsoundex (const char *src, char *dest)
   else if (size == 4) strcat (dest, "0");
   else dest[5]='\0';
 }
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Kölner Phonetik Verfahren
+// Da das X als 48 codiert wird, kann der Code schlimmstenfalls
+// Doppelt so Lang werden wie das Wort (Sofern das Wort nur aus "X" besteht
+// Plus verwaltungsoverhead Zwischenbuffer ausreichend dimensionieren
+// Am Ende der Codierung Längenprüfung ob in BUFFER_WORD_SIZE paßt
+// Falls nicht... Leerstring zurückgeben (Wort ungültig)
 void phoneconvert_cologne (const char *src, char *dest)
 {
-  char    scode1[BUFFER_SIZE_CODE];
-  char    scode2[BUFFER_SIZE_CODE];
+  char    scode1[((BUFFER_SIZE_WORD * 2) + 16)];
+  char    scode2[((BUFFER_SIZE_WORD * 2) + 16)];
   char    first;
-  char    group[3]; 
+  char    group[3];
   size_t  size;
   size_t  pos;
 
-  dest[0]='\0';                                  // Rückgabe leeren
-  if (strlen(src) >= BUFFER_SIZE_WORD) return ;  // Ende wenn Übergabewort zu lang
-  strcpy(scode1, src);                           // src nach scode1 kopieren
-  preconvert(scode1);                            // Vorkonvertieren, Ende wenn Leerstring
-  if (scode1[0] == '\0') return ;
-  
+  // Rückgabe leeren
+  dest[0]='\0';
+
+  if (strlen(src) >= BUFFER_SIZE_WORD) return;
+  strcpy(scode1, src);
+  preconvert(scode1);
+  if (scode1[0] == '\0') return;
+
   // Wegen lesen in 3er Gruppen kopieren wir scode1 nach scode2
   // und erweitern den übergebenen String hinten und vorn um ein Leerzeichen
   scode2[0]=' ';
   scode2[1]='\0';
   strcat(scode2, scode1);
   strcat(scode2, " ");
-  
+
   // Wort wird in Gruppen von 3 Buchstaben gelesen, da es Regeln für "NACH" und "VOR" Buchstabe gibt
   // Der Referenzbuchstabe ist immer der in der Mitte der 3er Gruppe
   // Lesen von scode2, und nach Regeln konvertiert in scode1
@@ -365,33 +382,45 @@ void phoneconvert_cologne (const char *src, char *dest)
       continue;
     }
   }
-  
+
   // doppelte entfernen, H entfernen
   delete_multiplechar(scode1);
   delete_char(scode1, 'H');
+
   // 0 Außer am Anfang entfernen
   first=scode1[0];
   scode1[0]='-';
   delete_char(scode1, '0');
   scode1[0]=first;
 
-  // Rückgabe füllen
+  // Rückgabe füllen, falls Code < BUFFER_SIZE_WORD
+  // Sonst schon oben geleerte Rückgabe unverändert lassen
+  if (strlen(scode1) >= BUFFER_SIZE_WORD) return;
+
   strcpy(dest, scode1);
 }
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Phonem Verfahren
+// Wenn Wortlänge < BUFFER_SIZE_WORD
+// Paßt Code ebenfalls in einen Buffer der Größe
+
+// Phonem liefert nicht für jedes Wort einen gültigen Code
+// z.B. das Wort Ahe
+// In solchen fällen wird im Code "---" zurückgegeben
 void phoneconvert_phonem (const char *src, char *dest)
 {
-  char    scode1[BUFFER_SIZE_CODE];
-  char    scode2[BUFFER_SIZE_CODE];
+  char    scode1[BUFFER_SIZE_WORD];
+  char    scode2[BUFFER_SIZE_WORD];
   char    tmp[5];
   size_t  pos=0;
 
-  dest[0]='\0';                                  // Rückgabe leeren
-  if (strlen(src) >= BUFFER_SIZE_WORD) return ;  // Ende wenn Übergabewort zu lang
-  strcpy(scode1, src);                           // src nach scode1 kopieren
-  preconvert(scode1);                            // Vorkonvertieren, Ende wenn Leerstring
-  if (scode1[0] == '\0') return ;
+  // Rückgabe leeren
+  dest[0]='\0';
+
+  if (strlen(src) >= BUFFER_SIZE_WORD) return;
+  strcpy(scode1, src);
+  preconvert(scode1);
+  if (scode1[0] == '\0') return;
 
   // 1. Durchgang = Buchstabenpaare kopieren/nach Regeln codieren, Quelle:scode1, Ziel: scode2
   //                Da es mit dem ö zu Problemen kommt, wird es vorerst als 0 kodiert
@@ -500,8 +529,7 @@ void phoneconvert_phonem (const char *src, char *dest)
     pos++;
   }
 
-  // Rückgabe füllen sofern gültiger Code erzeugt wird
-  // Sonst wird "---" zurückgegeben
+  // Falls Wort keinen gültigen Code erzeugt... "---" zurückgeben, sonst Code
   if (scode1[0] == '\0') strcpy(dest, "---");
   else strcpy(dest, scode1);
 }

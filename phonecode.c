@@ -38,14 +38,14 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 #define PHCODE_NAME_NOT_GERMAN    3
 #define PHCODE_PARAM_ERROR        4
 
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // passend zum Fehlercode wird ein Text ausgegeben
 // und Programm beendet
 static void error_exit (int err_no)
 {
   if (err_no == PHCODE_NAME_UNDERSIZE) fprintf(stderr, "Name zu kurz zum sinnvollen kodieren !\n");
   else if (err_no == PHCODE_NAME_OVERSIZE) fprintf(stderr, "Name zu lang !\n");
-  else if (err_no == PHCODE_NAME_NOT_GERMAN) fprintf(stderr, "Name enthält unerlaubte Zeichen !\n");
+  else if (err_no == PHCODE_NAME_NOT_GERMAN) fprintf(stderr, "Name ungültig !\n");
   else if (err_no == PHCODE_PARAM_ERROR) {
     fprintf(stderr, "Falsche Aufrufparameter !\n"
       "Aufruf:   phonecode-de -codetyp Name\n"
@@ -60,15 +60,15 @@ static void error_exit (int err_no)
       "          %i wenn Name zu lang\n"
       "          %i wenn sich unerlaubte Zeichen im Namen befinden. Erlaubt sind nur einzelne Worte,\n"
       "            Buchstaben deutsches Alphabet incl. Umlaute. Keine Leerzeichen oder Satzzeichen.\n"
-      "          %i wenn falsche Aufrufparameter\n", PHCODE_SUCCESS, PHCODE_NAME_UNDERSIZE, 
+      "          %i wenn falsche Aufrufparameter\n", PHCODE_SUCCESS, PHCODE_NAME_UNDERSIZE,
                           PHCODE_NAME_OVERSIZE, PHCODE_NAME_NOT_GERMAN, PHCODE_PARAM_ERROR);
   }
   exit (err_no);
 }
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 int main(int argc, char* argv[])
 {
-  char code[BUFFER_SIZE_CODE];
+  char code[BUFFER_SIZE_WORD];
 
   // Übergabeparameter prüfen
   // Falsche Anzahl Argumente
@@ -77,17 +77,17 @@ int main(int argc, char* argv[])
   // prüfen ob Namen zu kurz oder lang
   if (strlen (argv[2]) < 2) error_exit (PHCODE_NAME_UNDERSIZE);
   if (strlen (argv[2]) >= BUFFER_SIZE_WORD) error_exit (PHCODE_NAME_OVERSIZE);
-      
+
   // Übergabeparameter Codetyp abfragen phonetischen Code erzeugen, Ende wenn unbekannter Parameter
   if (strcmp (argv[1], "-k") == 0) phoneconvert_cologne(argv[2], code);
   else if (strcmp (argv[1], "-p") == 0) phoneconvert_phonem(argv[2], code);
   else if (strcmp (argv[1], "-s") == 0) phoneconvert_soundex(argv[2], code);
   else if (strcmp (argv[1], "-e") == 0) phoneconvert_exsoundex(argv[2], code);
   else error_exit (PHCODE_PARAM_ERROR);
-    
+
   // Ende mit Fehler wenn Name ungültig
   if (code[0] == '\0') error_exit (PHCODE_NAME_NOT_GERMAN);
-  
+
   // Alles OK, Code ausgeben
   printf("%s\n", code);
   return PHCODE_SUCCESS;

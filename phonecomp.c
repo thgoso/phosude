@@ -39,14 +39,14 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 #define PHCOMP_NAME_NOT_GERMAN    4
 #define PHCOMP_PARAM_ERROR        5
 
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // passend zum Fehlercode wird ein Text ausgegeben
 // und Programm beendet
 static void error_exit (int err_no)
 {
   if (err_no == PHCOMP_NAME_UNDERSIZE) fprintf(stderr, "Name zu kurz zum sinnvollen kodieren !\n");
   else if (err_no == PHCOMP_NAME_OVERSIZE) fprintf(stderr, "Name zu lang !\n");
-  else if (err_no == PHCOMP_NAME_NOT_GERMAN) fprintf(stderr, "Name enthält unerlaubte Zeichen !\n");
+  else if (err_no == PHCOMP_NAME_NOT_GERMAN) fprintf(stderr, "Name ungültig !\n");
   else if (err_no == PHCOMP_PARAM_ERROR) {
     fprintf(stderr, "Falsche Aufrufparameter !\n"
       "Aufruf:   phonecomp-de -codetyp Name Name\n"
@@ -65,14 +65,14 @@ static void error_exit (int err_no)
       "          %i wenn falsche Aufrufparameter\n", PHCOMP_MATCH, PHCOMP_NO_MATCH, PHCOMP_NAME_UNDERSIZE,
                                         PHCOMP_NAME_OVERSIZE, PHCOMP_NAME_NOT_GERMAN, PHCOMP_PARAM_ERROR);
   }
-  
+
   exit (err_no);
 }
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 int main (int argc, char* argv[])
 {
-  char code1[BUFFER_SIZE_CODE];
-  char code2[BUFFER_SIZE_CODE];
+  char code1[BUFFER_SIZE_WORD];
+  char code2[BUFFER_SIZE_WORD];
 
   // Übergabeparameter prüfen
   // Falsche Anzahl Argumente
@@ -81,7 +81,7 @@ int main (int argc, char* argv[])
   // Namen zu kurz oder zu lang
   if (strlen (argv[2]) < 2 || strlen(argv[3]) < 2) error_exit (PHCOMP_NAME_UNDERSIZE);
   if (strlen (argv[2]) >= BUFFER_SIZE_WORD || strlen(argv[3]) >= BUFFER_SIZE_WORD) error_exit (PHCOMP_NAME_OVERSIZE);
-     
+
   // Übergabeparameter Codetyp abfragen konvertieren, Ende bei Fehler
   if (strcmp (argv[1], "-k") == 0) {
     phoneconvert_cologne(argv[2], code1);
@@ -100,10 +100,10 @@ int main (int argc, char* argv[])
     phoneconvert_exsoundex(argv[3], code2);
   }
   else error_exit (PHCOMP_PARAM_ERROR);
-  
+
   // Ende wenn Fehler bei Codeerstellung
   if ((code1[0] == '\0') || (code2[0] == '\0')) error_exit (PHCOMP_NAME_NOT_GERMAN);
-    
+
   // Ausgabe != oder == und Exitcode
   if (strcmp (code1, code2) == 0) {
     printf("%s == %s\n", argv[2], argv[3]);

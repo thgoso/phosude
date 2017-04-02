@@ -45,6 +45,9 @@ rm -f phoneshow_read.o
 rm -f phoneshow_write.o
 rm -f phoneshow_str.o
 rm -f phoneshow_comp.o
+rm -f phonecode-de
+rm -f phonecomp-de
+rm -f phoneshow-de
 
 exit 0
 

@@ -16,7 +16,7 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 #include <string.h>
 
 
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Wandelt alle Großbuchstaben im String in Kleinbuchstaben (A-Z), Umlaute
 void to_lower (char *s)
 {
@@ -44,7 +44,7 @@ void to_lower (char *s)
     pos++;                      // Wenn Umlaut war ist jetzt pos+=2, alles Andere pos+=1;
   }
 }
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Levenshtein-Distanz aus http://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Levenshtein_distance
 // Berechnet die Levenshtein-Distanz zweier übergebener Strings
 // Was in dem Fall auf das Wort direkt oder den erzeugten phonetischen Code angewandt werden kann
@@ -58,7 +58,7 @@ int levenshtein(const char *s1, const char *s2)
   s1len = strlen(s1);
   s2len = strlen(s2);
   unsigned int column[s1len+1];
-    
+
   for (y = 1; y <= s1len; y++)
     column[y] = y;
   for (x = 1; x <= s2len; x++) {
