@@ -16,10 +16,16 @@ Das Programm funktioniert ähnlich "grep" nur daß eben eine phonetische Suche s
 Die Programme sind auf Grund der phonetischen Verfahren ausschließlich für den **deutschen Sprachraum** angedacht.
 
 *Da die Programme phonecode-de und phonecomp-de ehr simpel gehalten sind, wird auf eine Erklärung verzichtet.
-Dafür gehe ich jetzt etwas näher auf das Programm phoneshow-de ein. Zum ersten Test kann die Datei **adressbuch.txt** genutzt werden.*
+Dafür gehe ich jetzt etwas näher auf das Programm **phoneshow-de** ein. Zum ersten Test kann die Datei **adressbuch.txt** genutzt werden.*
 
+* Aufrufsyntax: phoneshow-de
 * Aufrufsyntax: phoneshow-de [Optionen] Name[n] [_Name[n]]
 * Textübergabe: Textdaten werden von stdin gelesen und in stdout ausgegeben
+
+#### Parameterloser Aufruf
+Eingabetext von stdin wird weitergeleitet an stdout. Zusätzlich werden alle Wörter extrahiert und diese in alle phonetischen Verfahren "übersetzt" ausgegeben.
+#### Aufruf mit Parametern
+Eingabetext von stdin wird durchsucht und bearbeitet in stdout ausgegeben.
 
 ##### Optionsschalter Phonetik
 - **-k** *Kölner Phonetik:* Für den deutschen Sprachraum das Beste
@@ -89,7 +95,7 @@ Somit werden auch Worte gefunden die den Code 667 oder 6578 oder 57 erzeugen. Au
 Jedes zusätzliche -l erhört die Zahl an möglichen Abweichungen. 2-3 -l sind OK. mehr sinnlos.
 
 #### Name ausschließen mit _Name:
-Bei der Suche können EXAKTE Schreibweisen ausgeschlossen werden, wenn man ein _ voranstellt.
+Bei der Suche können **EXAKTE** Schreibweisen ausgeschlossen werden, wenn man ein _ voranstellt.
 ```
 phoneshow-de -k -p Müller_Mueller
 ```
@@ -125,3 +131,10 @@ cat adressbuch.txt | phoneshow-de -k -p -s -e -w -f -x Meier Müller Schulz | so
 Findet alle phonetisch ähnlichen zu Meier Müller Schulz.
 Schaltet Ausgabe von Farbe und Legende ab, sodaß lediglich die Funde ausgegeben werden.
 Leitet durch sort und läßt von uniq zählen, sodaß eine Häufigkeitsliste ausgegeben wird.
+```
+phoneshow-de
+```
+Programm wartet auf Eingabe von stdin. Über die Tastatur gibt man jetzt ein paar Namen ein:
+> czerny czernie tschernie scherni scerny schärnü
+
+Es werden die Codes der Namen aller phonetischer Verfahren ausgegeben. Gereade hier sieht man, daß für die deutsche Sprache Kölner Phonetik und Phonem klar überlegen sind, denn sie codieren alle diese Namen gleich.
