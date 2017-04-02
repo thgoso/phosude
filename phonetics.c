@@ -393,10 +393,11 @@ void phoneconvert_cologne (const char *src, char *dest)
   delete_char(scode1, '0');
   scode1[0]=first;
 
-  // Rückgabe füllen, falls Code < BUFFER_SIZE_WORD
-  // Sonst schon oben geleerte Rückgabe unverändert lassen
-  if (strlen(scode1) >= BUFFER_SIZE_WORD) return;
-
+  // Rückgabe füllen, falls Code < BUFFER_SIZE_WORD, Sonst leeren
+  if (strlen(scode1) >= BUFFER_SIZE_WORD) {
+    dest[0]='\0';
+    return;
+  }
   strcpy(dest, scode1);
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
