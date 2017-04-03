@@ -42,8 +42,11 @@ Wendet Levenshtein-Filter auf die Worte an, wenn kein phonetisches Verfahren gew
 - **-a** ganzen Text ausgeben
 - **-z** nur Fundzeilen ausgeben
 - **-w** nur Fundworte ausgeben
+- **-c** zu Funden Positionen ausgeben
 
-Eine der 3 Ausgabevarianten kann gewählt werden. Ohne Parameterangabe zur Ausgabe ist -z aktiv. Zusätzlich kann der Verbose-Modus eingeschaltet werden.
+Option -c funktioniert wie -w jedoch werden statt der Worte die Positionen und Längen innerhalb einer Zeile ausgegeben. Fundzeile(1...) Fundposition(1...) Wortlänge(in 'char' gemessen)
+
+Eine der 4 Ausgabevarianten kann gewählt werden. Ohne Parameterangabe zur Ausgabe ist -z aktiv. Zusätzlich kann der Verbose-Modus eingeschaltet werden.
 - **-v** Analysedaten anzeigen
 
 ##### Optionsschalter Formatierung
@@ -131,6 +134,10 @@ cat adressbuch.txt | phoneshow-de -k -p -s -e -w -f -x Meier Müller Schulz | so
 Findet alle phonetisch ähnlichen zu Meier Müller Schulz.
 Schaltet Ausgabe von Farbe und Legende ab, sodaß lediglich die Funde ausgegeben werden.
 Leitet durch sort und läßt von uniq zählen, sodaß eine Häufigkeitsliste ausgegeben wird.
+```
+cat adressbuch.txt | phoneshow-de | egrep "^Worte:|^CodeP:"
+```
+Codiert den eingehenden Text, leitet durch egrep und man erhält eine Ausgabe aller im Eingabetext enthaltenen Worte, sowie ihren dazugehörigen Codes des Verahrens Phonem.
 ```
 phoneshow-de
 ```
