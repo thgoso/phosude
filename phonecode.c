@@ -28,7 +28,6 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 #include <stdlib.h>
 #include <string.h>
 #include "buffer_sizes.h"
-#include "phoneshow_types.h"
 #include "phonetics.h"
 
 // Rückgabekonstannten ans BS

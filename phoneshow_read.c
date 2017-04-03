@@ -23,6 +23,20 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 static char     Cur_Line[BUFFER_SIZE_LINE];
 static size_t   Cur_Read_Pos=0;
 
+
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Init für Funktion read_word... setzt modulare Variable Cur_Read_Pos auf 0
+// Somit kann man die Zeile auch mehrmals durchlaufen um Worte zu extrahieren
+void read_word_init (void)
+{
+  Cur_Read_Pos=0;
+}
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Gibt Cur_Read_Pos zurück
+size_t read_cur_pos (void)
+{
+  return Cur_Read_Pos;
+}
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Liest eine Zeile von stdin ein und speichert in Modulvariable Cur_Line
 int read_line (void)
@@ -43,13 +57,6 @@ int read_line (void)
   }
   // Wenn fgets NULL-Pointer liefert, kommt nix mehr an
   return PHS_REC_COMPLEETE;
-}
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Init für Funktion read_word... setzt modulare Variable Cur_Read_Pos auf 0
-// Somit kann man die Zeile auch mehrmals durchlaufen um Worte zu extrahieren
-void read_word_init (void)
-{
-  Cur_Read_Pos=0;
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Holt das nächste gültige deutsche Wort oder einzelnes Sonderzeichen aus Cur_Line und gibt es in dest zurück

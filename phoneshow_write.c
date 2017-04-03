@@ -28,7 +28,7 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 // Private Funktionen Prototypen
 static void write_verbose (const nameslist_t *list, const phops_t *phops, const char *word, const size_t line_no);
 static void verbose_word (const nameslist_t *list, const phops_t *phops, const char *word);
-static void show_footer (const nameslist_t *list, const phops_t *phops, const size_t foundcount);
+static void show_footer (const nameslist_t *list, const phops_t *phops, const size_t matchcount);
 
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -46,7 +46,7 @@ int write_out_a (const nameslist_t *list, const phops_t *phops, const frmops_t *
   int     word_stat;
   char    word[BUFFER_SIZE_WORD];
   name_t  *name;
-  size_t  found_cnt=0;
+  size_t  match_cnt=0;
   size_t  line_cnt=0;
 
   while (1) {
@@ -64,7 +64,7 @@ int write_out_a (const nameslist_t *list, const phops_t *phops, const frmops_t *
       else if (word_stat == PHS_IS_WORD) {
         name = compare_word_nameslist(list, phops, word);
         if (name != NULL) {
-          found_cnt++;
+          match_cnt++;
           printf("%s%s\033[m", name->color_string, word);
         }
         else printf("%s", word);
@@ -75,8 +75,8 @@ int write_out_a (const nameslist_t *list, const phops_t *phops, const frmops_t *
     if (frmops->v == true) write_verbose(list, phops, NULL, line_cnt);
   }
 
-  if (frmops->x == true) show_footer(list, phops, found_cnt);
-  if (found_cnt > 0) return PHS_MATCH;
+  if (frmops->x == true) show_footer(list, phops, match_cnt);
+  if (match_cnt > 0) return PHS_MATCH;
   else return PHS_NO_MATCH;
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -88,7 +88,7 @@ int write_out_z (const nameslist_t *list, const phops_t *phops, const frmops_t *
   int     word_stat;
   char    word[BUFFER_SIZE_WORD];
   name_t  *name;
-  size_t  found_cnt=0;
+  size_t  match_cnt=0;
   size_t  line_cnt=0;
   bool    show_line;
 
@@ -114,19 +114,18 @@ int write_out_z (const nameslist_t *list, const phops_t *phops, const frmops_t *
       }
     }
     // Wenn Fund in Zeile... das ganze Spiel von vorn, aber alles brav ausgeben
+    // Wortlängenüberschreitungen hätten oben schon Fehler ausgelöst
     if (show_line == true) {
       read_word_init();
       if (frmops->n == true) printf("%zd ", line_cnt);
-
       while (1) {
         word_stat = read_word(word);
-        if (word_stat == PHS_ERR_REC_WORD_OVERSIZE) return PHS_ERR_REC_WORD_OVERSIZE;
         if (word_stat == PHS_LINE_END_RACHED) break;
         if (word_stat == PHS_IS_SPECIAL_CHAR) printf("%s", word);
         else if (word_stat == PHS_IS_WORD) {
           name = compare_word_nameslist(list, phops, word);
           if (name != NULL) {
-            found_cnt++;
+            match_cnt++;
             printf("%s%s\033[m", name->color_string, word);
           }
           else printf("%s", word);
@@ -138,8 +137,8 @@ int write_out_z (const nameslist_t *list, const phops_t *phops, const frmops_t *
     }
   }
 
-  if (frmops->x == true) show_footer(list, phops, found_cnt);
-  if (found_cnt > 0) return PHS_MATCH;
+  if (frmops->x == true) show_footer(list, phops, match_cnt);
+  if (match_cnt > 0) return PHS_MATCH;
   else return PHS_NO_MATCH;
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -151,7 +150,7 @@ int write_out_w (const nameslist_t *list, const phops_t *phops, const frmops_t *
   int     word_stat;
   char    word[BUFFER_SIZE_WORD];
   name_t  *name;
-  size_t  found_cnt=0;
+  size_t  match_cnt=0;
   size_t  line_cnt=0;
 
   while (1) {
@@ -167,7 +166,7 @@ int write_out_w (const nameslist_t *list, const phops_t *phops, const frmops_t *
       if (word_stat == PHS_IS_WORD) {
         name = compare_word_nameslist(list, phops, word);
         if (name != NULL) {
-          found_cnt++;
+          match_cnt++;
           if (frmops->n == true) printf("%zd ",line_cnt);
           printf("%s%s\033[m\n", name->color_string, word);
           // ggf. mehr Anzeigen für einzelnes wort
@@ -177,14 +176,57 @@ int write_out_w (const nameslist_t *list, const phops_t *phops, const frmops_t *
     }
   }
 
-  if (frmops->x == true) show_footer(list, phops, found_cnt);
-  if (found_cnt > 0) return PHS_MATCH;
+  if (frmops->x == true) show_footer(list, phops, match_cnt);
+  if (match_cnt > 0) return PHS_MATCH;
   else return PHS_NO_MATCH;
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Ausgabemodus c
+// Positionen der Funde anzeigen
+// Läuft ab wie mode_w nur daß statt der Wörter Positionen angezeigt werden
+int write_out_c (const nameslist_t *list, const phops_t *phops, const frmops_t *frmops)
+{
+  int     line_stat;
+  int     word_stat;
+  char    word[BUFFER_SIZE_WORD];
+  name_t  *name;
+  size_t  pos;
+  size_t  len;
+  size_t  match_cnt=0;
+  size_t  line_cnt=0;
+
+  while (1) {
+    line_stat = read_line();
+    line_cnt++;
+    if (line_stat == PHS_ERR_REC_LINE_OVERSIZE) return PHS_ERR_REC_LINE_OVERSIZE;
+    if (line_stat == PHS_REC_COMPLEETE) break;
+    read_word_init();
+    while (1) {
+      pos = read_cur_pos();
+      word_stat = read_word(word);
+      if (word_stat == PHS_ERR_REC_WORD_OVERSIZE) return PHS_ERR_REC_WORD_OVERSIZE;
+      if (word_stat == PHS_LINE_END_RACHED) break;
+      if (word_stat == PHS_IS_WORD) {
+        name = compare_word_nameslist(list, phops, word);
+        if (name != NULL) {
+          match_cnt++;
+          len = strlen(word);
+          printf("%s%zd %zd %zd\033[m\n", name->color_string, line_cnt, (pos+1), len);
+          // ggf. mehr Anzeigen für einzelnes wort
+          if (frmops->v == true) write_verbose(list, phops, word, line_cnt);
+        }
+      }
+    }
+  }
+
+  if (frmops->x == true) show_footer(list, phops, match_cnt);
+  if (match_cnt > 0) return PHS_MATCH;
+  else return PHS_NO_MATCH;
+}
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Ausgabemodus convert
 // Textzeilen Original, in Wörter zerlegt und allen Codevarianten ausgeben
-int write_out_c (void)
+int write_out_convert (void)
 {
   int   line_stat;
   int   word_stat;
@@ -272,11 +314,10 @@ int write_out_c (void)
 // Zeigt die Legende zur Suche an
 // Wird von Ausgaberoutinen aufgerufen
 // Übergeben werden muß Anzahl der Funde
-static void show_footer (const nameslist_t *list, const phops_t *phops, const size_t foundcount)
+static void show_footer (const nameslist_t *list, const phops_t *phops, const size_t matchcount)
 {
   int  cnt;
   bool show_minus=false;
-
 
   printf("---------------LEGENDE---------------\n");
 
@@ -314,7 +355,7 @@ static void show_footer (const nameslist_t *list, const phops_t *phops, const si
   }
 
   //Funde
-  printf("\nFunde: %zd\n", foundcount);
+  printf("\nFunde: %zd\n", matchcount);
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Verbose Ausgabe
@@ -343,7 +384,6 @@ static void write_verbose (const nameslist_t *list, const phops_t *phops, const 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Unterfunktion von write_verbose
 // Verbose Ausgabe Wort
-// wird von write_verbose angesprungen
 static void verbose_word (const nameslist_t *list, const phops_t *phops, const char *word)
 {
   char code_k[BUFFER_SIZE_WORD];
@@ -371,7 +411,7 @@ static void verbose_word (const nameslist_t *list, const phops_t *phops, const c
 
   // Einfache Textsuche incl. Lev
   if ((phops->k == false && phops->p == false && phops->s == false && phops->e == false) && (phops->l > 0)) {
-  printf("    Wort=%s\n", word);
+    printf("    Wort=%s\n", word);
     for (cnt = 0; cnt < list->number_of_names; cnt++) {
       if (list->items[cnt].is_minusname == true) continue;
       printf("      Suche=%s\n", list->items[cnt].name_norm);
@@ -406,7 +446,7 @@ static void verbose_word (const nameslist_t *list, const phops_t *phops, const c
   if (phops->e == true) printf("CodeE=%s ", code_e);
   printf("\n");
 
-    for (cnt = 0; cnt <= last_idx; cnt++) {
+  for (cnt = 0; cnt <= last_idx; cnt++) {
     if (list->items[cnt].is_minusname == false) {
       // einen Suchnamen ausgeben, Verbindungslinien zu Wort anständig zeichnen
       if (cnt < last_idx) printf("    ├─Suche=%s\n", list->items[cnt].name_norm);

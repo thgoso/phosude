@@ -37,7 +37,7 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 // Farbstringtabelle zur bunten Ausgabe
 #define SIZE_COLORSTR             16
 #define NUMBER_OF_COLORS          28
-static const char color_table[NUMBER_OF_COLORS][SIZE_COLORSTR] = {
+static const char Color_Table[NUMBER_OF_COLORS][SIZE_COLORSTR] = {
   {"\033[1;37m\033[41m"}, {"\033[1;37m\033[42m"}, {"\033[1;37m\033[43m"}, {"\033[1;37m\033[44m"},
   {"\033[1;37m\033[45m"}, {"\033[1;37m\033[46m"}, {"\033[1;37m\033[47m"}, {"\033[1;33m\033[41m"},
   {"\033[1;33m\033[42m"}, {"\033[1;33m\033[43m"}, {"\033[1;33m\033[44m"}, {"\033[1;33m\033[45m"},
@@ -47,7 +47,7 @@ static const char color_table[NUMBER_OF_COLORS][SIZE_COLORSTR] = {
   {"\033[1;32m\033[44m"}, {"\033[1;32m\033[45m"}, {"\033[1;32m\033[46m"}, {"\033[1;32m\033[47m"}
 };
 // Farbstring bei unbunter Ausgabe
-static const char color_empty[]="";
+static const char Color_Empty[]="";
 
 
 
@@ -65,9 +65,9 @@ static void show_help (void)
     "Rückgabe         Textdaten formatiert in stdout\n"
     "Namen            Ein oder mehrere Namen nach denen gesucht werden soll\n"
     "_Namen           Ein oder mehrere Namen die bei der Suche ausgelassen werden sollen\n"
-    "Optionen      -k Kölner Phonetik:  für den deutschen Sprachraum das Beste\n"
-    "Phonetische   -p Phonem:           in manchen dBase Versionen enthalten auch gut für deutsche Namen\n"
-    "Suchverfahren -s Soundex:          ehr für englische Namen, aber Standard im Genealogiebereich\n"
+    "Optionen      -k Kölner Phonetik: für den deutschen Sprachraum das Beste\n"
+    "Phonetische   -p Phonem: in manchen dBase Versionen enthalten auch gut für deutsche Namen\n"
+    "Suchverfahren -s Soundex: ehr für englische Namen, aber Standard im Genealogiebereich\n"
     "              -e Extended Soundex: erweiterte Soundex Variante\n"
     "                 Alle vier Varianten können einzeln oder kombiniert verwendet werden.\n"
     "                 Ohne Parameterangabe zum Suchverfahren ist die phonetische Suche inaktiv.\n"
@@ -75,9 +75,11 @@ static void show_help (void)
     "Levenshtein      gewählt ist, oder auf den erzeugten phonetischen Code, wenn angegeben.\n"
     "Distanz          Jedes weitere -l erhöht die zulässige Levenshtein-Distanz um eins.\n"
     "Optionen      -a ganzen Text ausgeben\n"
-    "Textausgabe   -z nur Fundzeilen ausgeben\n"
+    "zur Ausgabe   -z nur Fundzeilen ausgeben\n"
     "              -w nur Fundworte ausgeben\n"
-    "                 Eine der 3 Ausgabevarianten kann gewählt werden.\n"
+    "              -c zu Funden die Positionen innerhalb der Zeilen und Längen ausgeben.\n"
+    "                 Fundzeile(1...) Fundposition(1...) Wortlänge(in 'char' gemessen)\n"
+    "                 Eine der 4 Ausgabevarianten kann gewählt werden.\n"
     "                 Ohne Parameterangabe zur Ausgabe ist -z aktiv.\n"
     "Verbose Modus -v Textausgabe erfolgt incl. Analyseansicht\n"
     "Nummerierung  -n Zeilennummerierung einschalten\n"
@@ -209,7 +211,7 @@ nameslist_t create_names_list (const int number_of_names)
     items[cnt].code_p[0]='\0';
     items[cnt].code_s[0]='\0';
     items[cnt].code_e[0]='\0';
-    items[cnt].color_string=color_empty;
+    items[cnt].color_string=Color_Empty;
   }
 
   list.number_of_names = number_of_names;
@@ -233,6 +235,7 @@ int main (int argc, char* argv[])
   bool        op_a=false;     // Ganzen Text ausgeben
   bool        op_z=false;     // Zeilen ausgeben
   bool        op_w=false;     // Worte ausgeben
+  bool        op_c=false;     // Positionen ausgeben
   
   // Startwerte Parameter die weitergeleitet werden
   frmops_t    frmops = {
@@ -249,10 +252,11 @@ int main (int argc, char* argv[])
               };
 
   // Wenn keine Übergabeparameter Text kodieren und schon fertig
+  // Funktion liefert IMMER PHS_NO_MATCH oder Fehlercode
   if (argc == 1) {
-    write_retval = write_out_c();
-    if ((write_retval != PHS_MATCH) && (write_retval != PHS_NO_MATCH)) error_exit(write_retval);
-    else return write_retval;
+    write_retval = write_out_convert();
+    if (write_retval != PHS_NO_MATCH) error_exit(write_retval);
+    else return PHS_NO_MATCH;
   }
 
   // Optionen aus Übergabe lesen und die Vars danach setzten
@@ -269,6 +273,7 @@ int main (int argc, char* argv[])
     else if (strcmp (param, "-a") == 0) op_a = true;
     else if (strcmp (param, "-z") == 0) op_z = true;
     else if (strcmp (param, "-w") == 0) op_w = true;
+    else if (strcmp (param, "-c") == 0) op_c = true;
     else if (strcmp (param, "-f") == 0) op_f = false;
     else if (strcmp (param, "-h") == 0) {
       show_help();
@@ -281,8 +286,8 @@ int main (int argc, char* argv[])
     else break;
   }
 
-  // Wenn kein Anzeigeparameter übergeben (-a -z -w) ... -z einschalten
-  if (op_a == false && op_z == false && op_w == false) op_z = true;
+  // Wenn kein Anzeigeparameter übergeben (-a -z -w -c) ... -z einschalten
+  if (op_a == false && op_z == false && op_w == false && op_c == false) op_z = true;
 
   // Keine Namen übergeben = Fehler
   if (op_cnt == argc) error_exit (PHS_ERR_PARAM);
@@ -327,7 +332,7 @@ int main (int argc, char* argv[])
       strcpy(list.items[name_cnt].name_lower, param);
       to_lower(list.items[name_cnt].name_lower);
       if (op_f == true) {
-        list.items[name_cnt].color_string = color_table[color_cnt % NUMBER_OF_COLORS];
+        list.items[name_cnt].color_string = Color_Table[color_cnt % NUMBER_OF_COLORS];
         color_cnt++;
       }
       // Immer alle Codes erzeugen, egal welche per Parameter gewählt
@@ -353,10 +358,10 @@ int main (int argc, char* argv[])
   // Ausgabe starten
   // Wenn mehrere gewählt, gewinnt die mit mehr Textausgabe
   // Funktionen liefern Statuskonstannte PHS_MATCH, PHS_NO_MATCH oder Fehlerkonstannte zurück
-
   if (op_a == true) write_retval = write_out_a (&list, &phops, &frmops);
   else if (op_z == true) write_retval = write_out_z (&list, &phops, &frmops);
-  else write_retval = write_out_w (&list, &phops, &frmops);
+  else if (op_w == true) write_retval = write_out_w (&list, &phops, &frmops);
+  else write_retval = write_out_c (&list, &phops, &frmops);
 
   // Aufäumen und Ende
   free(list.items);

@@ -22,6 +22,10 @@ void read_word_init (void);
 // PHS_ERR_REC_WORD_OVERSIZE  wenn Wort zu lang ist (BUFFER_SIZE_WORD)
 int read_word (char *dest);
 
-
+// Gibt aktuelle Position des Lesezeigers im lokalen Zeilenpuffer zurück
+// Kann vor read_word aufgerufen werden um zu erfahren an welcher Position
+// in der Zeile sich das folgende Wort/Sonderzeichen befindet
+size_t read_cur_pos (void);
+ 
 
 #endif // PHONESHOW_READ

@@ -20,6 +20,7 @@ Erzeugen von phonetischen Codes
 // Private Funktionen zur Stringmanipulation
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Vorkonvertierroutine
+// 
 // Wandelt ein übergebenes deutsches Wort von UTF-8 nach ASCII GROSSBUCHSTABEN
 // Umlaute: Ä,ä = AE
 //          Ü,ü = UE
@@ -28,34 +29,48 @@ Erzeugen von phonetischen Codes
 // Deutsche Umlaute sind in UTF-8 immer 2Byte
 // Die Ersatzzeichen sind ebenfalls 2Byte
 // Daher ändert sich an der Stringgröße nichts beim ersetzten
-// Sollten sich andere Zeichen als (A-Z, a-z, Ä, Ö, Ü, ä, ö, ü, ß) im String befinden
-// wird der Inhalt gänzlich gelöscht, da String kein deutsches Wort ist
-static void preconvert (char *s)
+// Übergabe:  Originalstring in *src
+// Rückgabe:  Konvertiertes Ergebnis in *dest
+//
+// dest muß Ausreichend Dimensioniert sein (BUFFER_SIZE_WORD)
+// In *dest wird ein Leerstring zurückgegeben wenn:
+// Stringlänge von *src >= BUFFER_SIZE_WORD (Übergabe also nicht in Rückgabe passen würde)
+// in *dest andere Zeichen als (A-Z, a-z, Ä, Ö, Ü, ä, ö, ü, ß) enthalten sind
+static void preconvert (const char *src, char *dest)
 {
   const char  uml[7][3] = {{"Ä"}, {"Ö"}, {"Ü"}, {"ä"}, {"ö"}, {"ü"}, {"ß"}};
   const char  rep[7][3] = {{"AE"},{"OE"},{"UE"},{"AE"},{"OE"},{"UE"},{"SS"}};
   int         cnt;
   int         replaced;
   size_t      pos=0;
-
-  while (s[pos] != '\0') {
+  
+  // *src zu Lang
+  if (strlen(src) >= BUFFER_SIZE_WORD) {
+    dest[0]='\0';
+    return;
+  }
+  
+  // *scr nach *dest kopieren und auf diesen String arbeiten
+  strcpy(dest, src);
+    
+  while (dest[pos] != '\0') {
     // A-Z
-    if ((s[pos] >= 'A') && (s[pos] <= 'Z')) {
+    if ((dest[pos] >= 'A') && (dest[pos] <= 'Z')) {
       pos++;
       continue;
     }
     // a-z
-    if ((s[pos] >= 'a') && (s[pos] <= 'z')) {
-      s[pos] -= 32;
+    if ((dest[pos] >= 'a') && (dest[pos] <= 'z')) {
+      dest[pos] -= 32;
       pos++;
       continue;
     }
     // Umlaute 0-6
     replaced=0;
     for (cnt=0; cnt<=6; cnt++) {
-      if ((s[pos] == uml[cnt][0]) && (s[pos+1] == uml[cnt][1])) {
-        s[pos] = rep[cnt][0];
-        s[pos+1] = rep[cnt][1];
+      if ((dest[pos] == uml[cnt][0]) && (dest[pos+1] == uml[cnt][1])) {
+        dest[pos] = rep[cnt][0];
+        dest[pos+1] = rep[cnt][1];
         pos+=2;
         replaced=1;
         break;
@@ -63,7 +78,7 @@ static void preconvert (char *s)
     }
     if (replaced == 1) continue;
     // Verbotenes Zeichen angetroffen... String verwerfen
-    s[0]='\0';
+    dest[0]='\0';
     return;
   }
 }
@@ -75,7 +90,7 @@ static void delete_char (char *s, const char c)
   size_t  pos_read=0;
   size_t  pos_write=0;
 
-  // Fehlerhafte Übergabe
+  // Sicherheitshalber
   if (c == '\0') return;
 
   while (1) {
@@ -104,9 +119,7 @@ static void delete_multiplechar (char *s)
       s[pos_write] = '\0';
       break;
     }
-    else if (s[pos_read] == last) {
-      pos_read++;
-    }
+    else if (s[pos_read] == last) pos_read++;
     else {
       last = s[pos_read];
       s[pos_write] = last;
@@ -126,15 +139,11 @@ void phoneconvert_soundex (const char *src, char *dest)
   char    first;
   size_t  size;
   size_t  pos=0;
-
-  // Rückgabe leeren
-  dest[0]='\0';
-
-  if (strlen(src) >= BUFFER_SIZE_WORD) return;
-  strcpy(dest, src);
-  preconvert(dest);
+  
+  // Preconvert liefert Leerstring wenn *src ungültig
+  preconvert(src, dest);
   if (dest[0] == '\0') return;
-
+  
   // 1. Zeichen aus dest merken und in dest mit '-' ausmaskieren
   first=dest[0];
   dest[0]='-';
@@ -174,7 +183,6 @@ void phoneconvert_soundex (const char *src, char *dest)
   // gemerktes 1. Zeichen wieder nach dest schieben... Alles auf 4 Stellen kürzen/0en anhängen
   dest[0]=first;
   size=strlen(dest);
-
   if (size == 1) strcat (dest, "000");
   else if (size == 2) strcat (dest, "00");
   else if (size == 3) strcat (dest, "0");
@@ -189,12 +197,8 @@ void phoneconvert_exsoundex (const char *src, char *dest)
   size_t  size;
   size_t  pos=0;
 
-  // Rückgabe leeren
-  dest[0]='\0';
-
-  if (strlen(src) >= BUFFER_SIZE_WORD) return;
-  strcpy(dest, src);
-  preconvert(dest);
+  // Preconvert liefert Leerstring wenn *src ungültig
+  preconvert(src, dest);
   if (dest[0] == '\0') return;
 
   // Ersetzungsregeln auf dest anwenden
@@ -256,21 +260,20 @@ void phoneconvert_exsoundex (const char *src, char *dest)
 // Falls nicht... Leerstring zurückgeben (Wort ungültig)
 void phoneconvert_cologne (const char *src, char *dest)
 {
-  char    scode1[((BUFFER_SIZE_WORD * 2) + 16)];
-  char    scode2[((BUFFER_SIZE_WORD * 2) + 16)];
+  char    scode1[((BUFFER_SIZE_WORD * 2) + 8)];
+  char    scode2[((BUFFER_SIZE_WORD * 2) + 8)];
   char    first;
   char    group[3];
   size_t  size;
   size_t  pos;
 
-  // Rückgabe leeren
-  dest[0]='\0';
-
-  if (strlen(src) >= BUFFER_SIZE_WORD) return;
-  strcpy(scode1, src);
-  preconvert(scode1);
-  if (scode1[0] == '\0') return;
-
+  // Preconvert liefert Leerstring wenn *src ungültig
+  preconvert(src, scode1);
+  if (scode1[0] == '\0') {
+    dest[0]='\0';
+    return;
+  }
+  
   // Wegen lesen in 3er Gruppen kopieren wir scode1 nach scode2
   // und erweitern den übergebenen String hinten und vorn um ein Leerzeichen
   scode2[0]=' ';
@@ -415,14 +418,13 @@ void phoneconvert_phonem (const char *src, char *dest)
   char    tmp[5];
   size_t  pos=0;
 
-  // Rückgabe leeren
-  dest[0]='\0';
-
-  if (strlen(src) >= BUFFER_SIZE_WORD) return;
-  strcpy(scode1, src);
-  preconvert(scode1);
-  if (scode1[0] == '\0') return;
-
+  // Preconvert liefert Leerstring wenn *src ungültig
+  preconvert(src, scode1);
+  if (scode1[0] == '\0') {
+    dest[0]='\0';
+    return;
+  }
+  
   // 1. Durchgang = Buchstabenpaare kopieren/nach Regeln codieren, Quelle:scode1, Ziel: scode2
   //                Da es mit dem ö zu Problemen kommt, wird es vorerst als 0 kodiert
   scode2[0]='\0';
@@ -449,7 +451,7 @@ void phoneconvert_phonem (const char *src, char *dest)
     }
     // OE muß eigentlich zu Ö werden, was aber Doppelbytezeichen wäre
     // Das ließe sich aber mit Routine zum entfernen von Doppelten Zeichen nicht
-    // Fehlerfrei abarbeiten, daher machen wir einfach erst mal eine 0 draus
+    // Fehlerfrei abarbeiten, daher machen wir einfach erst mal eine 0 draus (Einybytezeichen)
     else if (scode1[pos] == 'O' && scode1[pos+1] == 'E') {
       strcat(scode2, "0");
       pos+=2;
