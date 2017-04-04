@@ -1,26 +1,23 @@
 #ifndef PHONESHOW_READ
 #define PHONESHOW_READ
 
-
 // Liest eine Zeile von stdin ein und puffert lokal
-// Rückgabe:
-// PHS_REC_LINE_SUCCESS       Zeile gelesen und lokal gepuffert
-// PHS_REC_COMPLEETE          Datenempfang abgeschlossen
-// PHS_ERR_REC_LINE_OVERSIZE  Zeile mit Überlänge empfangen
-int read_line (void);
+int read_line (void);               // Rückgabe:
+#define PHSREAD_LINE_SUCCESS      0 // Zeile gelesen und lokal gepuffert
+#define PHSREAD_COMPLEETE         1 // Datenempfang abgeschlossen
+#define PHSREAD_LINE_OVERLENGTH   2 // Zeile mit Überlänge empfangen
 
 // Init für read_word, Springt an den Zeilenanfang des lokalen Puffers
 void read_word_init (void);
 
 // Holt das nächste gültige deutsche Wort oder einzelnes Sonderzeichen aus lokal Puffer
 // und gibt es in dest zurück
-// dest muß ausreichend dimensioniert sein (BUFFER_SIZE_WORD)
-// Rückgabe:
-// PHS_IS_WORD                wenn es sich um ein gültiges deutsches Wort handelt
-// PHS_IS_SPECIAL_CHAR        wenn es sich um ein einzelnes Sonderzeichen handelt
-// PHS_LINE_END_RACHED        wenn Zeile komplett durch ist (Neustart mit read_word_init)
-// PHS_ERR_REC_WORD_OVERSIZE  wenn Wort zu lang ist (BUFFER_SIZE_WORD)
-int read_word (char *dest);
+int read_word (word_t *dest);       // Rückgabe:
+#define PHSREAD_IS_WORD           0 // wenn es sich um ein gültiges deutsches Wort handelt
+#define PHSREAD_IS_SPECIAL_CHAR   1 // wenn es sich um ein einzelnes Sonderzeichen handelt
+#define PHSREAD_LINE_END          2 // wenn Zeile komplett durch ist (Neustart mit read_word_init)
+#define PHSREAD_WORD_OVERLENGTH   3 // wenn Wort zu lang ist (BUFFER_SIZE_WORD)
+
 
 // Gibt aktuelle Position des Lesezeigers im lokalen Zeilenpuffer zurück
 // Kann vor read_word aufgerufen werden um zu erfahren an welcher Position

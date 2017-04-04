@@ -16,18 +16,17 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 
 #include <stdio.h>
 #include <string.h>
+#include "typedefs.h"
+#include "string.h"
 #include "phonetics.h"
-#include "buffer_sizes.h"
-#include "phoneshow_str.h"
-#include "phoneshow_types.h"
 #include "phoneshow_read.h"
 #include "phoneshow_comp.h"
 #include "phoneshow_write.h"
 
 
 // Private Funktionen Prototypen
-static void write_verbose (const nameslist_t *list, const phops_t *phops, const char *word, const size_t line_no);
-static void verbose_word (const nameslist_t *list, const phops_t *phops, const char *word);
+static void write_verbose (const nameslist_t *list, const phops_t *phops, const word_t *word, const size_t line_no);
+static void verbose_word (const nameslist_t *list, const phops_t *phops, const word_t *word);
 static void show_footer (const nameslist_t *list, const phops_t *phops, const size_t matchcount);
 
 
@@ -35,7 +34,7 @@ static void show_footer (const nameslist_t *list, const phops_t *phops, const si
 // Öffentliche Funktionen zur Ausgabe liefern:
 // PHS_MATCH                    mind. einem Fund
 // PHS_NO_MATCH                 wenn kein Fund
-// PHS_ERR_REC_LINE_OVERSIZE    Wort mit Überlänge von stdin empfangen
+// PHSREAD_LINE_OVERLENGTH    Wort mit Überlänge von stdin empfangen
 // PHS_ERR_REC_WORD_OVERSIZE    Zeile mit Überlänge von stdin empfangen
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Ausgabemodus a
@@ -44,7 +43,7 @@ int write_out_a (const nameslist_t *list, const phops_t *phops, const frmops_t *
 {
   int     line_stat;
   int     word_stat;
-  char    word[BUFFER_SIZE_WORD];
+  word_t  word;
   name_t  *name;
   size_t  match_cnt=0;
   size_t  line_cnt=0;
@@ -52,22 +51,22 @@ int write_out_a (const nameslist_t *list, const phops_t *phops, const frmops_t *
   while (1) {
     line_stat = read_line();
     line_cnt++;
-    if (line_stat == PHS_ERR_REC_LINE_OVERSIZE) return PHS_ERR_REC_LINE_OVERSIZE;
-    if (line_stat == PHS_REC_COMPLEETE) break;
+    if (line_stat == PHSREAD_LINE_OVERLENGTH) return PHSWRITE_LINE_OVERLENGTH;
+    if (line_stat == PHSREAD_COMPLEETE) break;
     read_word_init();
     if (frmops->n == true) printf("%zd ", line_cnt);
     while (1) {
-      word_stat = read_word(word);
-      if (word_stat == PHS_ERR_REC_WORD_OVERSIZE) return PHS_ERR_REC_WORD_OVERSIZE;
-      if (word_stat == PHS_LINE_END_RACHED) break;
-      if (word_stat == PHS_IS_SPECIAL_CHAR) printf("%s", word);
-      else if (word_stat == PHS_IS_WORD) {
-        name = compare_word_nameslist(list, phops, word);
+      word_stat = read_word(&word);
+      if (word_stat == PHSREAD_WORD_OVERLENGTH) return PHSWRITE_WORD_OVERLENGTH;
+      if (word_stat == PHSREAD_LINE_END) break;
+      if (word_stat == PHSREAD_IS_SPECIAL_CHAR) printf("%s", word.s);
+      else if (word_stat == PHSREAD_IS_WORD) {
+        name = compare_word_nameslist(list, phops, &word);
         if (name != NULL) {
           match_cnt++;
-          printf("%s%s\033[m", name->color_string, word);
+          printf("%s%s\033[m", name->color, word.s);
         }
-        else printf("%s", word);
+        else printf("%s", word.s);
       }
     }
     printf("\n");
@@ -76,8 +75,8 @@ int write_out_a (const nameslist_t *list, const phops_t *phops, const frmops_t *
   }
 
   if (frmops->x == true) show_footer(list, phops, match_cnt);
-  if (match_cnt > 0) return PHS_MATCH;
-  else return PHS_NO_MATCH;
+  if (match_cnt > 0) return PHSWRITE_MATCH;
+  else return PHSWRITE_NO_MATCH;
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Ausgabemodus z
@@ -86,7 +85,7 @@ int write_out_z (const nameslist_t *list, const phops_t *phops, const frmops_t *
 {
   int     line_stat;
   int     word_stat;
-  char    word[BUFFER_SIZE_WORD];
+  word_t  word;
   name_t  *name;
   size_t  match_cnt=0;
   size_t  line_cnt=0;
@@ -96,17 +95,17 @@ int write_out_z (const nameslist_t *list, const phops_t *phops, const frmops_t *
     // Zeile lesen
     line_stat = read_line();
     line_cnt++;
-    if (line_stat == PHS_ERR_REC_LINE_OVERSIZE) return PHS_ERR_REC_LINE_OVERSIZE;
-    if (line_stat == PHS_REC_COMPLEETE) break;
+    if (line_stat == PHSREAD_LINE_OVERLENGTH) return PHSWRITE_LINE_OVERLENGTH;
+    if (line_stat == PHSREAD_COMPLEETE) break;
     read_word_init();
     show_line = false;
     // Alle Worte in Zeile prüfen ob passendes Wort in Zeile, noch keine Ausgabe
     while (1) {
-      word_stat = read_word(word);
-      if (word_stat == PHS_ERR_REC_WORD_OVERSIZE) return PHS_ERR_REC_WORD_OVERSIZE;
-      if (word_stat == PHS_LINE_END_RACHED) break;
-      if (word_stat == PHS_IS_WORD) {
-        name = compare_word_nameslist(list, phops, word);
+      word_stat = read_word(&word);
+      if (word_stat == PHSREAD_WORD_OVERLENGTH) return PHSWRITE_WORD_OVERLENGTH;
+      if (word_stat == PHSREAD_LINE_END) break;
+      if (word_stat == PHSREAD_IS_WORD) {
+        name = compare_word_nameslist(list, phops, &word);
         if (name != NULL) {
           show_line = true;
           break;
@@ -119,16 +118,16 @@ int write_out_z (const nameslist_t *list, const phops_t *phops, const frmops_t *
       read_word_init();
       if (frmops->n == true) printf("%zd ", line_cnt);
       while (1) {
-        word_stat = read_word(word);
-        if (word_stat == PHS_LINE_END_RACHED) break;
-        if (word_stat == PHS_IS_SPECIAL_CHAR) printf("%s", word);
-        else if (word_stat == PHS_IS_WORD) {
-          name = compare_word_nameslist(list, phops, word);
+        word_stat = read_word(&word);
+        if (word_stat == PHSREAD_LINE_END) break;
+        if (word_stat == PHSREAD_IS_SPECIAL_CHAR) printf("%s", word.s);
+        else if (word_stat == PHSREAD_IS_WORD) {
+          name = compare_word_nameslist(list, phops, &word);
           if (name != NULL) {
             match_cnt++;
-            printf("%s%s\033[m", name->color_string, word);
+            printf("%s%s\033[m", name->color, word.s);
           }
-          else printf("%s", word);
+          else printf("%s", word.s);
         }
       }
       printf("\n");
@@ -138,8 +137,8 @@ int write_out_z (const nameslist_t *list, const phops_t *phops, const frmops_t *
   }
 
   if (frmops->x == true) show_footer(list, phops, match_cnt);
-  if (match_cnt > 0) return PHS_MATCH;
-  else return PHS_NO_MATCH;
+  if (match_cnt > 0) return PHSWRITE_MATCH;
+  else return PHSWRITE_NO_MATCH;
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Ausgabemodus w
@@ -148,7 +147,7 @@ int write_out_w (const nameslist_t *list, const phops_t *phops, const frmops_t *
 {
   int     line_stat;
   int     word_stat;
-  char    word[BUFFER_SIZE_WORD];
+  word_t  word;
   name_t  *name;
   size_t  match_cnt=0;
   size_t  line_cnt=0;
@@ -156,29 +155,29 @@ int write_out_w (const nameslist_t *list, const phops_t *phops, const frmops_t *
   while (1) {
     line_stat = read_line();
     line_cnt++;
-    if (line_stat == PHS_ERR_REC_LINE_OVERSIZE) return PHS_ERR_REC_LINE_OVERSIZE;
-    if (line_stat == PHS_REC_COMPLEETE) break;
+    if (line_stat == PHSREAD_LINE_OVERLENGTH) return PHSREAD_LINE_OVERLENGTH;
+    if (line_stat == PHSREAD_COMPLEETE) break;
     read_word_init();
     while (1) {
-      word_stat = read_word(word);
-      if (word_stat == PHS_ERR_REC_WORD_OVERSIZE) return PHS_ERR_REC_WORD_OVERSIZE;
-      if (word_stat == PHS_LINE_END_RACHED) break;
-      if (word_stat == PHS_IS_WORD) {
-        name = compare_word_nameslist(list, phops, word);
+      word_stat = read_word(&word);
+      if (word_stat == PHSREAD_WORD_OVERLENGTH) return PHSWRITE_WORD_OVERLENGTH;
+      if (word_stat == PHSREAD_LINE_END) break;
+      if (word_stat == PHSREAD_IS_WORD) {
+        name = compare_word_nameslist(list, phops, &word);
         if (name != NULL) {
           match_cnt++;
           if (frmops->n == true) printf("%zd ",line_cnt);
-          printf("%s%s\033[m\n", name->color_string, word);
+          printf("%s%s\033[m\n", name->color, word.s);
           // ggf. mehr Anzeigen für einzelnes wort
-          if (frmops->v == true) write_verbose(list, phops, word, line_cnt);
+          if (frmops->v == true) write_verbose(list, phops, &word, line_cnt);
         }
       }
     }
   }
 
   if (frmops->x == true) show_footer(list, phops, match_cnt);
-  if (match_cnt > 0) return PHS_MATCH;
-  else return PHS_NO_MATCH;
+  if (match_cnt > 0) return PHSWRITE_MATCH;
+  else return PHSWRITE_NO_MATCH;
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Ausgabemodus c
@@ -188,7 +187,7 @@ int write_out_c (const nameslist_t *list, const phops_t *phops, const frmops_t *
 {
   int     line_stat;
   int     word_stat;
-  char    word[BUFFER_SIZE_WORD];
+  word_t  word;
   name_t  *name;
   size_t  pos;
   size_t  len;
@@ -198,74 +197,74 @@ int write_out_c (const nameslist_t *list, const phops_t *phops, const frmops_t *
   while (1) {
     line_stat = read_line();
     line_cnt++;
-    if (line_stat == PHS_ERR_REC_LINE_OVERSIZE) return PHS_ERR_REC_LINE_OVERSIZE;
-    if (line_stat == PHS_REC_COMPLEETE) break;
+    if (line_stat == PHSREAD_LINE_OVERLENGTH) return PHSWRITE_LINE_OVERLENGTH;
+    if (line_stat == PHSREAD_COMPLEETE) break;
     read_word_init();
     while (1) {
       pos = read_cur_pos();
-      word_stat = read_word(word);
-      if (word_stat == PHS_ERR_REC_WORD_OVERSIZE) return PHS_ERR_REC_WORD_OVERSIZE;
-      if (word_stat == PHS_LINE_END_RACHED) break;
-      if (word_stat == PHS_IS_WORD) {
-        name = compare_word_nameslist(list, phops, word);
+      word_stat = read_word(&word);
+      if (word_stat == PHSREAD_WORD_OVERLENGTH) return PHSWRITE_WORD_OVERLENGTH;
+      if (word_stat == PHSREAD_LINE_END) break;
+      if (word_stat == PHSREAD_IS_WORD) {
+        name = compare_word_nameslist(list, phops, &word);
         if (name != NULL) {
           match_cnt++;
-          len = strlen(word);
-          printf("%s%zd %zd %zd\033[m\n", name->color_string, line_cnt, (pos+1), len);
+          len = strlen(word.s);
+          printf("%s%zd %zd %zd\033[m\n", name->color, line_cnt, (pos+1), len);
           // ggf. mehr Anzeigen für einzelnes wort
-          if (frmops->v == true) write_verbose(list, phops, word, line_cnt);
+          if (frmops->v == true) write_verbose(list, phops, &word, line_cnt);
         }
       }
     }
   }
 
   if (frmops->x == true) show_footer(list, phops, match_cnt);
-  if (match_cnt > 0) return PHS_MATCH;
-  else return PHS_NO_MATCH;
+  if (match_cnt > 0) return PHSWRITE_MATCH;
+  else return PHSWRITE_NO_MATCH;
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Ausgabemodus convert
 // Textzeilen Original, in Wörter zerlegt und allen Codevarianten ausgeben
 int write_out_convert (void)
 {
-  int   line_stat;
-  int   word_stat;
-  char  word[BUFFER_SIZE_WORD];
-  char  code[BUFFER_SIZE_WORD];
+  int    line_stat;
+  int    word_stat;
+  word_t word;
+  code_t code;
 
   while (1) {
     line_stat = read_line();
-    if (line_stat == PHS_ERR_REC_LINE_OVERSIZE) return PHS_ERR_REC_LINE_OVERSIZE;
-    if (line_stat == PHS_REC_COMPLEETE) break;
+    if (line_stat == PHSREAD_LINE_OVERLENGTH) return PHSWRITE_LINE_OVERLENGTH;
+    if (line_stat == PHSREAD_COMPLEETE) break;
     // 1. Durchgang Zeile Original ausgeben
     // Einmalig WORD_OVERSIZE prüfen, ab 2. Durchgang nicht mehr nötig
     printf("Zeile: ");
     read_word_init();
     while (1) {
-      word_stat = read_word(word);
-      if (word_stat == PHS_ERR_REC_WORD_OVERSIZE) return PHS_ERR_REC_WORD_OVERSIZE;
-      if (word_stat == PHS_LINE_END_RACHED) break;
-      else printf("%s", word);
+      word_stat = read_word(&word);
+      if (word_stat == PHSREAD_WORD_OVERLENGTH) return PHSWRITE_WORD_OVERLENGTH;
+      if (word_stat == PHSREAD_LINE_END) break;
+      else printf("%s", word.s);
     }
     printf("\n");
     // 2. Durchgang Wörter der Zeile ausgeben
     printf("Worte: ");
     read_word_init();
     while (1) {
-      word_stat = read_word(word);
-      if (word_stat == PHS_LINE_END_RACHED) break;
-      if (word_stat == PHS_IS_WORD) printf("%s ", word);
+      word_stat = read_word(&word);
+      if (word_stat == PHSREAD_LINE_END) break;
+      if (word_stat == PHSREAD_IS_WORD) printf("%s ", word.s);
     }
     printf("\n");
     // 3. Durchgang CodesK zu Wörtern der Zeile ausgeben
     printf("CodeK: ");
     read_word_init();
     while (1) {
-      word_stat = read_word(word);
-      if (word_stat == PHS_LINE_END_RACHED) break;
-      if (word_stat == PHS_IS_WORD) {
-        phoneconvert_cologne(word, code);
-        printf("%s ", code);
+      word_stat = read_word(&word);
+      if (word_stat == PHSREAD_LINE_END) break;
+      if (word_stat == PHSREAD_IS_WORD) {
+        phoneconvert_cologne(&word, &code);
+        printf("%s ", code.s);
       }
     }
     printf("\n");
@@ -273,11 +272,11 @@ int write_out_convert (void)
     printf("CodeP: ");
     read_word_init();
     while (1) {
-      word_stat = read_word(word);
-      if (word_stat == PHS_LINE_END_RACHED) break;
-      if (word_stat == PHS_IS_WORD) {
-        phoneconvert_phonem(word, code);
-        printf("%s ", code);
+      word_stat = read_word(&word);
+      if (word_stat == PHSREAD_LINE_END) break;
+      if (word_stat == PHSREAD_IS_WORD) {
+        phoneconvert_phonem(&word, &code);
+        printf("%s ", code.s);
       }
     }
     printf("\n");
@@ -285,11 +284,11 @@ int write_out_convert (void)
     printf("CodeS: ");
     read_word_init();
     while (1) {
-      word_stat = read_word(word);
-      if (word_stat == PHS_LINE_END_RACHED) break;
-      if (word_stat == PHS_IS_WORD) {
-        phoneconvert_soundex(word, code);
-        printf("%s ", code);
+      word_stat = read_word(&word);
+      if (word_stat == PHSREAD_LINE_END) break;
+      if (word_stat == PHSREAD_IS_WORD) {
+        phoneconvert_soundex(&word, &code);
+        printf("%s ", code.s);
       }
     }
     printf("\n");
@@ -297,17 +296,17 @@ int write_out_convert (void)
     printf("CodeE: ");
     read_word_init();
     while (1) {
-      word_stat = read_word(word);
-      if (word_stat == PHS_LINE_END_RACHED) break;
-      if (word_stat == PHS_IS_WORD) {
-        phoneconvert_exsoundex(word, code);
-        printf("%s ", code);
+      word_stat = read_word(&word);
+      if (word_stat == PHSREAD_LINE_END) break;
+      if (word_stat == PHSREAD_IS_WORD) {
+        phoneconvert_exsoundex(&word, &code);
+        printf("%s ", code.s);
       }
     }
     printf("\n");
   }
   // War ja nichts zu suchen
-  return PHS_NO_MATCH;
+  return PHSWRITE_NO_MATCH;
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Private Funktion
@@ -325,7 +324,7 @@ static void show_footer (const nameslist_t *list, const phops_t *phops, const si
   printf("Suche: ");
   for (cnt = 0; cnt < list->number_of_names; cnt++) {
     if (list->items[cnt].is_minusname == false) {
-      printf("%s%s\033[m ", list->items[cnt].color_string, list->items[cnt].name_norm);
+      printf("%s%s\033[m ", list->items[cnt].color, list->items[cnt].name_norm.s);
     }
     else show_minus=true;
   }
@@ -334,7 +333,7 @@ static void show_footer (const nameslist_t *list, const phops_t *phops, const si
   if (show_minus == true) {
     printf("\nnicht: ");
     for (cnt = 0; cnt < list->number_of_names; cnt++) {
-      if (list->items[cnt].is_minusname == true) printf("%s ", list->items[cnt].name_norm);
+      if (list->items[cnt].is_minusname == true) printf("%s ", list->items[cnt].name_norm.s);
     }
   }
 
@@ -363,62 +362,59 @@ static void show_footer (const nameslist_t *list, const phops_t *phops, const si
 //                    Pointer auf Wort ... Zusatzinfos für Wort ausgeben
 // wird von den Ausgaberoutinen write_mode_ angesprungen
 // NACHDEM eine neue Zeile gelesen/ausgegeben wurde
-static void write_verbose (const nameslist_t *list, const phops_t *phops, const char *word, const size_t line_no)
+static void write_verbose (const nameslist_t *list, const phops_t *phops, const word_t *word, const size_t line_no)
 {
-  int   stat;
-  char  tmp[BUFFER_SIZE_WORD];
+  int    stat;
+  word_t tmp;
 
   printf("  Zeile=%zd\n", line_no);
   if (word != NULL) verbose_word(list, phops, word);
   else {
     read_word_init();
     while (1) {
-      stat = read_word(tmp);
-      // PHS_ERR_REC_WORD_OVERSIZE könnte geliefert werden...
+      stat = read_word(&tmp);
+      // PHSREAD_WORD_OVERLENGTH könnte geliefert werden...
       // Zeile wurde aber schon mal in write_mode_ gelesen, hätte da schon Fehler gegeben
-      if (stat == PHS_LINE_END_RACHED) break;
-      if (stat == PHS_IS_WORD) verbose_word(list, phops, tmp);
+      if (stat == PHSREAD_LINE_END) break;
+      if (stat == PHSREAD_IS_WORD) verbose_word(list, phops, &tmp);
     }
   }
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Unterfunktion von write_verbose
 // Verbose Ausgabe Wort
-static void verbose_word (const nameslist_t *list, const phops_t *phops, const char *word)
+static void verbose_word (const nameslist_t *list, const phops_t *phops, const word_t *word)
 {
-  char code_k[BUFFER_SIZE_WORD];
-  char code_p[BUFFER_SIZE_WORD];
-  char code_s[BUFFER_SIZE_WORD];
-  char code_e[BUFFER_SIZE_WORD];
-  char word_lower[BUFFER_SIZE_WORD];
-  int  lev_k, lev_p, lev_s, lev_e, lev;
-  int  cnt, last_idx;
+  code_t  code_k, code_p, code_s, code_e;
+  word_t  word_upper;
+  int     lev_k, lev_p, lev_s, lev_e, lev;
+  int     cnt, last_idx;
 
   // Einfache Textsuche
   if ((phops->k == false && phops->p == false && phops->s == false && phops->e == false) && (phops->l == 0)) {
-    printf("    Wort=%s\n", word);
+    printf("    Wort=%s\n", word->s);
     for (cnt = 0; cnt < list->number_of_names; cnt++) {
       if (list->items[cnt].is_minusname == true) continue;
-      strcpy(word_lower, word);
-      to_lower(word_lower);
-      if (strcmp(word_lower, list->items[cnt].name_lower) == 0) {
-        printf("      %sSuche=%s\033[m\n", list->items[cnt].color_string, list->items[cnt].name_norm);
+      strcpy(word_upper.s, word->s);
+      str_to_ascii_upper_word(word_upper.s);
+      if (strcmp(word_upper.s, list->items[cnt].name_upper.s) == 0) {
+        printf("      %sSuche=%s\033[m\n", list->items[cnt].color, list->items[cnt].name_norm.s);
       }
-      else printf("      Suche=%s\n", list->items[cnt].name_norm);
+      else printf("      Suche=%s\n", list->items[cnt].name_norm.s);
     }
     return;
   }
 
   // Einfache Textsuche incl. Lev
   if ((phops->k == false && phops->p == false && phops->s == false && phops->e == false) && (phops->l > 0)) {
-    printf("    Wort=%s\n", word);
+    printf("    Wort=%s\n", word->s);
     for (cnt = 0; cnt < list->number_of_names; cnt++) {
       if (list->items[cnt].is_minusname == true) continue;
-      printf("      Suche=%s\n", list->items[cnt].name_norm);
-      strcpy(word_lower, word);
-      to_lower(word_lower);
-      lev=levenshtein(word_lower, list->items[cnt].name_lower);
-      if (lev <= phops->l) printf("        %sLev=%i\033[m\n", list->items[cnt].color_string, lev);
+      printf("      Suche=%s\n", list->items[cnt].name_norm.s);
+      strcpy(word_upper.s, word->s);
+      str_to_ascii_upper_word(word_upper.s);
+      lev = str_lev(word_upper.s, list->items[cnt].name_upper.s);
+      if (lev <= phops->l) printf("        %sLev=%i\033[m\n", list->items[cnt].color, lev);
       else printf("        Lev=%i\n", lev);
     }
     return;
@@ -433,76 +429,76 @@ static void verbose_word (const nameslist_t *list, const phops_t *phops, const c
     last_idx--;
   }
 
-  printf("    Wort=%s\n", word);
-  phoneconvert_cologne(word, code_k);
-  phoneconvert_phonem(word, code_p);
-  phoneconvert_soundex(word, code_s);
-  phoneconvert_exsoundex(word, code_e);
+  printf("    Wort=%s\n", word->s);
+  phoneconvert_cologne(word, &code_k);
+  phoneconvert_phonem(word, &code_p);
+  phoneconvert_soundex(word, &code_s);
+  phoneconvert_exsoundex(word, &code_e);
   printf("    │ ");
   // Codes zu Wort in einer Zeile ausgeben
-  if (phops->k == true) printf("CodeK=%s ", code_k);
-  if (phops->p == true) printf("CodeP=%s ", code_p);
-  if (phops->s == true) printf("CodeS=%s ", code_s);
-  if (phops->e == true) printf("CodeE=%s ", code_e);
+  if (phops->k == true) printf("CodeK=%s ", code_k.s);
+  if (phops->p == true) printf("CodeP=%s ", code_p.s);
+  if (phops->s == true) printf("CodeS=%s ", code_s.s);
+  if (phops->e == true) printf("CodeE=%s ", code_e.s);
   printf("\n");
 
   for (cnt = 0; cnt <= last_idx; cnt++) {
     if (list->items[cnt].is_minusname == false) {
       // einen Suchnamen ausgeben, Verbindungslinien zu Wort anständig zeichnen
-      if (cnt < last_idx) printf("    ├─Suche=%s\n", list->items[cnt].name_norm);
-      else printf("    └─Suche=%s\n", list->items[cnt].name_norm);
+      if (cnt < last_idx) printf("    ├─Suche=%s\n", list->items[cnt].name_norm.s);
+      else printf("    └─Suche=%s\n", list->items[cnt].name_norm.s);
       if (cnt < last_idx) printf("    │ ");
       else printf("      ");
       // Codes zu Suchnamen in eine Zeile
       if (phops->k == true) {
-        if (strcmp(list->items[cnt].code_k, code_k) == 0) {
-          printf("%sCodeK=%s\033[m ", list->items[cnt].color_string, list->items[cnt].code_k);
+        if (strcmp(list->items[cnt].codek.s, code_k.s) == 0) {
+          printf("%sCodeK=%s\033[m ", list->items[cnt].color, list->items[cnt].codek.s);
         }
-        else printf("CodeK=%s ", list->items[cnt].code_k);
+        else printf("CodeK=%s ", list->items[cnt].codek.s);
       }
       if (phops->p == true) {
-        if (strcmp(list->items[cnt].code_p, code_p) == 0) {
-          printf("%sCodeP=%s\033[m ", list->items[cnt].color_string, list->items[cnt].code_p);
+        if (strcmp(list->items[cnt].codep.s, code_p.s) == 0) {
+          printf("%sCodeP=%s\033[m ", list->items[cnt].color, list->items[cnt].codep.s);
         }
-        else printf("CodeP=%s ", list->items[cnt].code_p);
+        else printf("CodeP=%s ", list->items[cnt].codep.s);
       }
       if (phops->s == true) {
-        if (strcmp(list->items[cnt].code_s, code_s) == 0) {
-          printf("%sCodeS=%s\033[m ", list->items[cnt].color_string, list->items[cnt].code_s);
+        if (strcmp(list->items[cnt].codes.s, code_s.s) == 0) {
+          printf("%sCodeS=%s\033[m ", list->items[cnt].color, list->items[cnt].codes.s);
         }
-        else printf("CodeS=%s ", list->items[cnt].code_s);
+        else printf("CodeS=%s ", list->items[cnt].codes.s);
       }
       if (phops->e == true) {
-        if (strcmp(list->items[cnt].code_e, code_e) == 0) {
-          printf("%sCodeE=%s\033[m ", list->items[cnt].color_string, list->items[cnt].code_e);
+        if (strcmp(list->items[cnt].codee.s, code_e.s) == 0) {
+          printf("%sCodeE=%s\033[m ", list->items[cnt].color, list->items[cnt].codee.s);
         }
-        else printf("CodeE=%s ", list->items[cnt].code_e);
+        else printf("CodeE=%s ", list->items[cnt].codee.s);
       }
       printf("\n");
 
       // Hier mur weiter wenn phon. Suche incl. Lev-Dist
       if (phops->l > 0) {
-        lev_k=levenshtein(list->items[cnt].code_k, code_k);
-        lev_p=levenshtein(list->items[cnt].code_p, code_p);
-        lev_s=levenshtein(list->items[cnt].code_s, code_s);
-        lev_e=levenshtein(list->items[cnt].code_e, code_e);
+        lev_k= str_lev(list->items[cnt].codek.s, code_k.s);
+        lev_p= str_lev(list->items[cnt].codep.s, code_p.s);
+        lev_s= str_lev(list->items[cnt].codes.s, code_s.s);
+        lev_e= str_lev(list->items[cnt].codee.s, code_e.s);
         if (cnt < last_idx) printf("    │   ");
         else printf("        ");
         // Lev-Distanzen in einer Zeile ausgeben
         if (phops->k == true) {
-          if (lev_k <= phops->l) printf("%sLevK=%i\033[m ", list->items[cnt].color_string, lev_k);
+          if (lev_k <= phops->l) printf("%sLevK=%i\033[m ", list->items[cnt].color, lev_k);
           else printf("LevK=%i ", lev_k);
         }
         if (phops->p == true) {
-          if (lev_p <= phops->l) printf("%sLevP=%i\033[m ", list->items[cnt].color_string, lev_p);
+          if (lev_p <= phops->l) printf("%sLevP=%i\033[m ", list->items[cnt].color, lev_p);
           else printf("LevP=%i ", lev_p);
           }
         if (phops->s == true) {
-          if (lev_s <= phops->l) printf("%sLevS=%i\033[m ", list->items[cnt].color_string, lev_s);
+          if (lev_s <= phops->l) printf("%sLevS=%i\033[m ", list->items[cnt].color, lev_s);
           else printf("LevS=%i ", lev_s);
         }
         if (phops->e == true) {
-          if (lev_e <= phops->l) printf("%sLevE=%i\033[m ", list->items[cnt].color_string, lev_e);
+          if (lev_e <= phops->l) printf("%sLevE=%i\033[m ", list->items[cnt].color, lev_e);
           else printf("LevE=%i ", lev_e);
         }
         printf("\n");

@@ -8,7 +8,7 @@
 // identisch ist
 // Rückgabe: Pointer auf passenden Namen in list wenn eine phonetische Übereinstimmung gefunden wurde
 //           Pointer auf NULL wenn keine phonetische Übereinstimmung gefunden wurde
-name_t *compare_word_nameslist (const nameslist_t *list, const phops_t *phops, const char *word);
+name_t *compare_word_nameslist (const nameslist_t *list, const phops_t *phops, const word_t *word);
 
 
 

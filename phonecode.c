@@ -27,13 +27,14 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "buffer_sizes.h"
+#include "typedefs.h"
+#include "string.h"
 #include "phonetics.h"
 
 // Rückgabekonstannten ans BS
 #define PHCODE_SUCCESS            0
-#define PHCODE_NAME_UNDERSIZE     1
-#define PHCODE_NAME_OVERSIZE      2
+#define PHCODE_NAME_UNDERLENGTH   1
+#define PHCODE_NAME_OVERLENGTH    2
 #define PHCODE_NAME_NOT_GERMAN    3
 #define PHCODE_PARAM_ERROR        4
 
@@ -42,8 +43,8 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 // und Programm beendet
 static void error_exit (int err_no)
 {
-  if (err_no == PHCODE_NAME_UNDERSIZE) fprintf(stderr, "Name zu kurz zum sinnvollen kodieren !\n");
-  else if (err_no == PHCODE_NAME_OVERSIZE) fprintf(stderr, "Name zu lang !\n");
+  if (err_no == PHCODE_NAME_UNDERLENGTH) fprintf(stderr, "Name zu kurz zum sinnvollen kodieren !\n");
+  else if (err_no == PHCODE_NAME_OVERLENGTH) fprintf(stderr, "Name zu lang !\n");
   else if (err_no == PHCODE_NAME_NOT_GERMAN) fprintf(stderr, "Name ungültig !\n");
   else if (err_no == PHCODE_PARAM_ERROR) {
     fprintf(stderr, "Falsche Aufrufparameter !\n"
@@ -59,35 +60,34 @@ static void error_exit (int err_no)
       "          %i wenn Name zu lang\n"
       "          %i wenn sich unerlaubte Zeichen im Namen befinden. Erlaubt sind nur einzelne Worte,\n"
       "            Buchstaben deutsches Alphabet incl. Umlaute. Keine Leerzeichen oder Satzzeichen.\n"
-      "          %i wenn falsche Aufrufparameter\n", PHCODE_SUCCESS, PHCODE_NAME_UNDERSIZE,
-                          PHCODE_NAME_OVERSIZE, PHCODE_NAME_NOT_GERMAN, PHCODE_PARAM_ERROR);
+      "          %i wenn falsche Aufrufparameter\n", PHCODE_SUCCESS, PHCODE_NAME_UNDERLENGTH,
+                          PHCODE_NAME_OVERLENGTH, PHCODE_NAME_NOT_GERMAN, PHCODE_PARAM_ERROR);
   }
   exit (err_no);
 }
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 int main(int argc, char* argv[])
 {
-  char code[BUFFER_SIZE_WORD];
-
+  word_t name;
+  code_t code;
+  
   // Übergabeparameter prüfen
   // Falsche Anzahl Argumente
   if (argc != 3) error_exit(PHCODE_PARAM_ERROR);
 
-  // prüfen ob Namen zu kurz oder lang
-  if (strlen (argv[2]) < 2) error_exit (PHCODE_NAME_UNDERSIZE);
-  if (strlen (argv[2]) >= BUFFER_SIZE_WORD) error_exit (PHCODE_NAME_OVERSIZE);
-
+  // prüfen ob Namen zu kurz, lang ungültig
+  if (strlen (argv[2]) < 2) error_exit (PHCODE_NAME_UNDERLENGTH);
+  if (str_to_word_type(argv[2], &name) == false) error_exit (PHCODE_NAME_OVERLENGTH);
+  if (str_to_ascii_upper_word(name.s) == false) error_exit (PHCODE_NAME_NOT_GERMAN);
+  
   // Übergabeparameter Codetyp abfragen phonetischen Code erzeugen, Ende wenn unbekannter Parameter
-  if (strcmp (argv[1], "-k") == 0) phoneconvert_cologne(argv[2], code);
-  else if (strcmp (argv[1], "-p") == 0) phoneconvert_phonem(argv[2], code);
-  else if (strcmp (argv[1], "-s") == 0) phoneconvert_soundex(argv[2], code);
-  else if (strcmp (argv[1], "-e") == 0) phoneconvert_exsoundex(argv[2], code);
+  if (strcmp (argv[1], "-k") == 0) phoneconvert_cologne(&name, &code);
+  else if (strcmp (argv[1], "-p") == 0) phoneconvert_phonem(&name, &code);
+  else if (strcmp (argv[1], "-s") == 0) phoneconvert_soundex(&name, &code);
+  else if (strcmp (argv[1], "-e") == 0) phoneconvert_exsoundex(&name, &code);
   else error_exit (PHCODE_PARAM_ERROR);
 
-  // Ende mit Fehler wenn Name ungültig
-  if (code[0] == '\0') error_exit (PHCODE_NAME_NOT_GERMAN);
-
   // Alles OK, Code ausgeben
-  printf("%s\n", code);
+  printf("%s\n", code.s);
   return PHCODE_SUCCESS;
 }
