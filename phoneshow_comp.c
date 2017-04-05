@@ -14,9 +14,10 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 */
 
 #include <string.h>
-#include "typedefs.h"
-#include "phonetics.h"
+#include "bool.h"
 #include "string.h"
+#include "phonetics.h"
+#include "phoneshow_types.h"
 
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -28,7 +29,7 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 static bool compare_word_name (const name_t *name, const phops_t *phops, const word_t *word)
 {
   int     lev;
-  code_t  code;
+  phcode_t  code;
   word_t  word_upper;
 
   // Wenn keine phonetischen Optionen gewählt
@@ -44,47 +45,48 @@ static bool compare_word_name (const name_t *name, const phops_t *phops, const w
 
   // Phon Opt gewählt, also Wort in phone Code wandeln
   // mit jeweiligen phon. Code des Namens vergleichen
+  // ggf. Lev-Dist auf erzeugten Code anwenden
   if (phops->k == true) {
     phoneconvert_cologne(word, &code);
     if (phops->l != 0) {
-      lev = str_lev(code.s, name->codek.s);
+      lev = str_lev(code.s, name->code_k.s);
       if (lev <= phops->l) return true;
     }
     else {
-      if (strcmp (code.s, name->codek.s) == 0) return true;
+      if (strcmp (code.s, name->code_k.s) == 0) return true;
     }
   }
 
   if (phops->p == true) {
     phoneconvert_phonem(word, &code);
     if (phops->l != 0) {
-      lev = str_lev (code.s, name->codep.s);
+      lev = str_lev (code.s, name->code_p.s);
       if (lev <= phops->l) return true;
     }
     else {
-      if (strcmp (code.s, name->codep.s) == 0) return true;
+      if (strcmp (code.s, name->code_p.s) == 0) return true;
     }
   }
 
   if (phops->s == true) {
     phoneconvert_soundex(word, &code);
     if (phops->l != 0) {
-      lev = str_lev (code.s, name->codes.s);
+      lev = str_lev (code.s, name->code_s.s);
       if (lev <= phops->l) return true;
     }
     else {
-      if (strcmp (code.s, name->codes.s) == 0) return true;
+      if (strcmp (code.s, name->code_s.s) == 0) return true;
     }
   }
 
   if (phops->e == true) {
     phoneconvert_exsoundex(word, &code);
     if (phops->l != 0) {
-      lev = str_lev (code.s, name->codee.s);
+      lev = str_lev (code.s, name->code_e.s);
       if (lev <= phops->l) return true;
     }
     else {
-      if (strcmp (code.s, name->codee.s) == 0) return true;
+      if (strcmp (code.s, name->code_e.s) == 0) return true;
     }
   }
 

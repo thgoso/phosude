@@ -14,7 +14,9 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 */
 
 #include <string.h>
-#include "typedefs.h"
+#include "bool.h"
+#include "string.h"
+#include "phonetics.h"
 
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

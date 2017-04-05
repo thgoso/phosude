@@ -14,13 +14,14 @@ Erzeugen von phonetischen Codes
 */
 
 #include <string.h>
-#include "typedefs.h"
+#include "bool.h"
 #include "string.h"
+#include "phonetics.h"
 
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Soundex Verfahren
-void phoneconvert_soundex (const word_t *src, code_t *dest)
+void phoneconvert_soundex (const word_t *src, phcode_t *dest)
 {
   char    first;
   size_t  size;
@@ -76,7 +77,7 @@ void phoneconvert_soundex (const word_t *src, code_t *dest)
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Extended Soundex Verfahren
-void phoneconvert_exsoundex (const word_t *src, code_t *dest)
+void phoneconvert_exsoundex (const word_t *src, phcode_t *dest)
 {
   size_t  size;
   size_t  pos=0;
@@ -137,7 +138,7 @@ void phoneconvert_exsoundex (const word_t *src, code_t *dest)
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Kölner Phonetik Verfahren
-void phoneconvert_cologne (const word_t *src, code_t *dest)
+void phoneconvert_cologne (const word_t *src, phcode_t *dest)
 {
   char    scode1[(BUFFSIZE_CODE + 4)];    // Zwischenbuffer
   char    scode2[(BUFFSIZE_CODE + 4)];    // Etwas Größer wegen Erweiterung
@@ -280,7 +281,7 @@ void phoneconvert_cologne (const word_t *src, code_t *dest)
 // Phonem liefert nicht für jedes Wort einen gültigen Code
 // z.B. das Wort Ahe
 // In solchen fällen wird im Code "---" zurückgegeben
-void phoneconvert_phonem (const word_t *src, code_t *dest)
+void phoneconvert_phonem (const word_t *src, phcode_t *dest)
 {
   char    scode1[BUFFSIZE_CODE];
   char    scode2[BUFFSIZE_CODE];

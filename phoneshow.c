@@ -27,23 +27,11 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "typedefs.h"
+#include "bool.h"
 #include "string.h"
 #include "phonetics.h"
+#include "phoneshow_types.h"
 #include "phoneshow_write.h"
-
-
-// Rückgabekonstannten ans BS
-#define PHSHOW_MATCH                    0
-#define PHSHOW_NO_MATCH                 1
-#define PHSHOW_ERR_NAME_UNDERLENGTH     2
-#define PHSHOW_ERR_NAME_OVERLENGTH      3
-#define PHSHOW_ERR_NAME_NOT_GERMAN      4
-#define PHSHOW_ERR_PARAM                5
-#define PHSHOW_ERR_REC_LINE_OVERLENGTH  6
-#define PHSHOW_ERR_REC_WORD_OVERLENGTH  7
-#define PHSHOW_ERR_MEM                  8
-
 
 // Farbstringtabelle zur bunten Ausgabe
 #define SIZE_COLORSTR             16
@@ -105,20 +93,18 @@ static void show_help (void)
   printf("               %i wenn kein phonetisch ähnlicher Name gefunden wurde\n",
                          PHSHOW_NO_MATCH);
   printf("               %i wenn Name zu kurz zum sinnvollen codieren\n",
-                         PHSHOW_ERR_NAME_UNDERLENGTH);
+                         PHSHOW_ERR_NAME_UNDERLEN);
   printf("               %i wenn Name zu lang\n",
-                         PHSHOW_ERR_NAME_OVERLENGTH);
+                         PHSHOW_ERR_NAME_OVERLEN);
   printf("               %i wenn unerlaubte Zeichen im Namen enthalten sind. Erlaubt sind nur einzelne Worte,\n"
          "                 Buchstaben deutsches Alphabet incl. Umlaute. Keine Leerzeichen oder Satzzeichen.\n",
                          PHSHOW_ERR_NAME_NOT_GERMAN);
   printf("               %i wenn falsche Aufrufparameter\n",
                          PHSHOW_ERR_PARAM);
   printf("               %i wenn von stdin Textzeile in Überlänge empfangen wurde\n",
-                         PHSHOW_ERR_REC_LINE_OVERLENGTH);
+                         PHSHOW_ERR_LINE_OVERLEN);
   printf("               %i wenn von stdin Wort in Überlänge empfangen wurde\n",
-                         PHSHOW_ERR_REC_WORD_OVERLENGTH);
-  printf("                 Zeichen pro Zeile %d, Zeichen pro Wort %d\n",
-                         BUFFSIZE_LINE, BUFFSIZE_WORD);
+                         PHSHOW_ERR_WORD_OVERLEN);
   printf("               %i wenn es bei Speicheranfordeung zu Problemen kam\n",
                          PHSHOW_ERR_MEM);
 }
@@ -177,34 +163,34 @@ static void show_examples (void)
     "Leitet durch sort und läßt von uniq zählen, sodaß eine Häufigkeitsliste ausgegeben wird.\n\n");
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Exitfunktion
-// Gibt Fehlermeldung aus und beendet Proggramm
-// Gibt Fehlernummer ans BS zurück
-void error_exit (const int err_no)
+// Zentrale Exitfunktion
+// Übergabe Statuskonstannte... diese wird ans BS zurückgegeben
+// Gibt bei Fehlerstatus Fehlermeldung aus
+void exit_func (const int status_no)
 {
-  if (err_no == PHSHOW_ERR_NAME_UNDERLENGTH) fprintf(stderr, "phoneshow-de: Name zu kurz zur sinnvollen Suche !\n");
-  else if (err_no == PHSHOW_ERR_NAME_OVERLENGTH) fprintf(stderr, "phoneshow-de: Name zu lang !\n");
-  else if (err_no == PHSHOW_ERR_NAME_NOT_GERMAN) fprintf(stderr, "phoneshow-de: Name ungültig !\n");
-  else if (err_no == PHSHOW_ERR_MEM) fprintf(stderr, "phoneshow-de: Fehler bei Speicheranforderung !\n");
-  else if (err_no == PHSHOW_ERR_REC_LINE_OVERLENGTH) fprintf(stderr, "phoneshow-de: Suche Abgebrochen !\n"
+  if (status_no == PHSHOW_ERR_NAME_UNDERLEN) fprintf(stderr, "phoneshow-de: Name zu kurz zur sinnvollen Suche !\n");
+  else if (status_no == PHSHOW_ERR_NAME_OVERLEN) fprintf(stderr, "phoneshow-de: Name zu lang !\n");
+  else if (status_no == PHSHOW_ERR_NAME_NOT_GERMAN) fprintf(stderr, "phoneshow-de: Name ungültig !\n");
+  else if (status_no == PHSHOW_ERR_MEM) fprintf(stderr, "phoneshow-de: Fehler bei Speicheranforderung !\n");
+  else if (status_no == PHSHOW_ERR_LINE_OVERLEN) fprintf(stderr, "phoneshow-de: Suche Abgebrochen !\n"
                                                                "Zeile von stdin hat Überlänge !\n");
-  else if (err_no == PHSHOW_ERR_REC_WORD_OVERLENGTH) fprintf(stderr, "phoneshow-de: Suche Abgebrochen !\n"
+  else if (status_no == PHSHOW_ERR_WORD_OVERLEN) fprintf(stderr, "phoneshow-de: Suche Abgebrochen !\n"
                                                                "Wort von stdin hat Überlänge !\n");
-  else if (err_no == PHSHOW_ERR_PARAM) {
+  else if (status_no == PHSHOW_ERR_PARAM) {
     fprintf(stderr, "phoneshow-de: Falsche Aufrufparameter !\n"
       "Aufruf:    phoneshow-de\n"
       "Aufruf:    phoneshow-de [Optionen] Name[n] [_Name[n]]\n"
       "Hilfe:     phoneshow-de -h\n"
       "Beispiele: phoneshow-de -b\n\n");
   }
-
-  exit (err_no);
+    
+  exit (status_no);
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Reserviert Speicher für Namensliste und füllt mit default
 // Übergabe:  Anzahl Namen
 // Rückgabe:  Namensliste
-// Bei Fehler Speicherreservierung Sprung zu error_exit
+// Bei Fehler Speicherreservierung Sprung zu exit_func und Ende
 nameslist_t create_names_list (const int number_of_names)
 {
   int           cnt;
@@ -212,16 +198,16 @@ nameslist_t create_names_list (const int number_of_names)
   nameslist_t   list;
 
   items = (name_t*) malloc( number_of_names * sizeof( name_t ));
-  if (items == NULL) error_exit (PHSHOW_ERR_MEM);
+  if (items == NULL) exit_func (PHSHOW_ERR_MEM);
 
   for (cnt = 0; cnt < number_of_names; cnt++) {
     items[cnt].is_minusname=false;
     items[cnt].name_norm.s[0]='\0';
     items[cnt].name_upper.s[0]='\0';
-    items[cnt].codek.s[0]='\0';
-    items[cnt].codep.s[0]='\0';
-    items[cnt].codes.s[0]='\0';
-    items[cnt].codee.s[0]='\0';
+    items[cnt].code_k.s[0]='\0';
+    items[cnt].code_p.s[0]='\0';
+    items[cnt].code_s.s[0]='\0';
+    items[cnt].code_e.s[0]='\0';
     items[cnt].color=Color_Empty;
   }
 
@@ -263,12 +249,10 @@ int main (int argc, char* argv[])
               };
 
   // Wenn keine Übergabeparameter Text kodieren und schon fertig
-  // Funktion liefert IMMER PHSWRITE_NO_MATCH oder Fehlercode
+  // Funktion liefert IMMER PH_SUCCESS_NO_MATCH oder Fehlercode
   if (argc == 1) {
     write_retval = write_out_convert();
-    if (write_retval == PHSWRITE_LINE_OVERLENGTH) error_exit (PHSHOW_ERR_REC_LINE_OVERLENGTH);
-    else if (write_retval == PHSWRITE_WORD_OVERLENGTH) error_exit (PHSHOW_ERR_REC_WORD_OVERLENGTH);
-    else return PHSHOW_NO_MATCH;
+    exit_func (write_retval);
   }
 
   // Optionen aus Übergabe lesen und die Vars danach setzten
@@ -289,11 +273,11 @@ int main (int argc, char* argv[])
     else if (strcmp (param, "-f") == 0) op_f = false;
     else if (strcmp (param, "-h") == 0) {
       show_help();
-      return PHSHOW_NO_MATCH;
+      exit_func(PHSHOW_SUCCESS);
     }
     else if (strcmp (param, "-b") == 0) {
       show_examples();
-      return PHSHOW_NO_MATCH;
+      exit_func(PHSHOW_SUCCESS);
     }
     else break;
   }
@@ -302,7 +286,7 @@ int main (int argc, char* argv[])
   if (op_a == false && op_z == false && op_w == false && op_c == false) op_z = true;
 
   // Keine Namen übergeben = Fehler
-  if (op_cnt == argc) error_exit (PHSHOW_ERR_PARAM);
+  if (op_cnt == argc) exit_func (PHSHOW_ERR_PARAM);
 
   // Index setzten 1. und letzter Name in Argliste, Anzahl
   idxstart = op_cnt;
@@ -322,11 +306,11 @@ int main (int argc, char* argv[])
     // Ende wenn Name zu kurz oder lang
     if (strlen(param) < 2) {
       free(list.items);
-      error_exit (PHSHOW_ERR_NAME_UNDERLENGTH);
+      exit_func (PHSHOW_ERR_NAME_UNDERLEN);
     }
     if (strlen(param) >= BUFFSIZE_WORD) {
       free(list.items);
-      error_exit (PHSHOW_ERR_NAME_OVERLENGTH);
+      exit_func(PHSHOW_ERR_NAME_OVERLEN);
     }
     // Minusnamen... .is_minusname, .name_norm, .name_upper setzten, Rest default lassen
     // Ende wenn kein deutsches Wort
@@ -337,7 +321,7 @@ int main (int argc, char* argv[])
       strcpy(list.items[name_cnt].name_upper.s, param);
       if (str_to_ascii_upper_word(list.items[name_cnt].name_upper.s) == false) {
         free(list.items);
-        error_exit (PHSHOW_ERR_NAME_NOT_GERMAN);
+        exit_func(PHSHOW_ERR_NAME_NOT_GERMAN);
       }
     }
     // Suchnamen, alles setzten, Hilfsvar only_minusname clear
@@ -348,29 +332,28 @@ int main (int argc, char* argv[])
       strcpy(list.items[name_cnt].name_upper.s, param);
       if (str_to_ascii_upper_word(list.items[name_cnt].name_upper.s) == false) {
         free(list.items);
-        error_exit (PHSHOW_ERR_NAME_NOT_GERMAN);
+        exit_func (PHSHOW_ERR_NAME_NOT_GERMAN);
       }
       if (op_f == true) {
         list.items[name_cnt].color = Color_Table[color_cnt % NUMBER_OF_COLORS];
         color_cnt++;
       }
       // Immer alle Codes erzeugen, egal welche per Parameter gewählt
-      phoneconvert_cologne(&list.items[name_cnt].name_norm, &list.items[name_cnt].codek);
-      phoneconvert_phonem(&list.items[name_cnt].name_norm, &list.items[name_cnt].codep);
-      phoneconvert_soundex(&list.items[name_cnt].name_norm, &list.items[name_cnt].codes);
-      phoneconvert_exsoundex(&list.items[name_cnt].name_norm, &list.items[name_cnt].codee);
+      phoneconvert_cologne(&list.items[name_cnt].name_norm, &list.items[name_cnt].code_k);
+      phoneconvert_phonem(&list.items[name_cnt].name_norm, &list.items[name_cnt].code_p);
+      phoneconvert_soundex(&list.items[name_cnt].name_norm, &list.items[name_cnt].code_s);
+      phoneconvert_exsoundex(&list.items[name_cnt].name_norm, &list.items[name_cnt].code_e);
     }
   }
 
   // Wenn Namensliste NUR aus Minusnamen besteht = Fehler
   if (only_minusname == true) {
     free(list.items);
-    error_exit (PHSHOW_ERR_PARAM);
+    exit_func(PHSHOW_ERR_PARAM);
   }
 
-  // Ausgabe starten
-  // Wenn mehrere gewählt, gewinnt die mit mehr Textausgabe
-  // Funktionen liefern Statuskonstannte PHS_MATCH, PHS_NO_MATCH oder Fehlerkonstannte zurück
+  // Ausgabe starten, wenn mehrere gewählt, gewinnt die mit mehr Textausgabe
+  // Funktionen liefern passende Statuskonstannte für exit_func 
   if (op_a == true) write_retval = write_out_a (&list, &phops, &frmops);
   else if (op_z == true) write_retval = write_out_z (&list, &phops, &frmops);
   else if (op_w == true) write_retval = write_out_w (&list, &phops, &frmops);
@@ -378,8 +361,8 @@ int main (int argc, char* argv[])
 
   // Aufäumen und Ende
   free(list.items);
-  if (write_retval == PHSWRITE_LINE_OVERLENGTH) error_exit (PHSHOW_ERR_REC_LINE_OVERLENGTH);
-  else if (write_retval == PHSWRITE_WORD_OVERLENGTH) error_exit (PHSHOW_ERR_REC_WORD_OVERLENGTH);
-  else if (write_retval == PHSWRITE_NO_MATCH) return PHSHOW_NO_MATCH;
-  return PHSHOW_MATCH;
+  exit_func(write_retval);
+  
+  // Wir nie erreicht
+  return 255;
 }

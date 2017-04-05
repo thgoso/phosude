@@ -15,8 +15,14 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 
 #include <stdio.h>
 #include <string.h>
-#include "typedefs.h"
-#include "phoneshow_read.h"
+#include "bool.h"
+#include "string.h"
+#include "phonetics.h"
+#include "phoneshow_types.h"
+
+// Buffergröße für Zeile kann angepaßt werden
+// Dürfte aber für normale Textdateien ausreichen
+#define BUFFSIZE_LINE 4096
 
 
 static char     Cur_Line[BUFFSIZE_LINE];
@@ -47,15 +53,15 @@ int read_line (void)
 
   if(fgets(Cur_Line, BUFFSIZE_LINE, stdin) != NULL) {
     size=strlen(Cur_Line);
-    if (size == BUFFSIZE_LINE - 1) return PHSREAD_LINE_OVERLENGTH;
+    if (size == BUFFSIZE_LINE - 1) return PHSHOW_ERR_LINE_OVERLEN;
     else {
       // Zeilenumbruch entfernen
       if (Cur_Line[size-1] == '\n') Cur_Line[size-1]='\0';
-      return PHSREAD_LINE_SUCCESS;
+      return PHSHOW_SUCCESS;
     }
   }
   // Wenn fgets NULL-Pointer liefert, kommt nix mehr an
-  return PHSREAD_COMPLEETE;
+  return PHSHOW_END_REACHED;
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Holt das nächste gültige deutsche Wort oder einzelnes Sonderzeichen aus Cur_Line und gibt es in dest zurück
@@ -63,38 +69,38 @@ int read_word (word_t *dest)
 {
   const char      uml[7][3] = {{"Ä"}, {"Ö"}, {"Ü"}, {"ä"}, {"ö"}, {"ü"}, {"ß"}};
   size_t          writepos=0;
-  int             word_mode=0;
+  bool            word_mode=false;
   int             cnt;
 
   // Ausgabe leeren
   dest->s[0]='\0';
-  // Text komplett durch
-  if (Cur_Line[Cur_Read_Pos] == '\0') return PHSREAD_LINE_END;
+  // Zeile komplett durch
+  if (Cur_Line[Cur_Read_Pos] == '\0') return PHSHOW_END_REACHED;
 
   // 1. Zeichen bestimmen Buchstabe oder Sonderzeichen
   if ((Cur_Line[Cur_Read_Pos] >= 'a' && Cur_Line[Cur_Read_Pos] <= 'z') ||
     (Cur_Line[Cur_Read_Pos] >= 'A' && Cur_Line[Cur_Read_Pos] <= 'Z')) {
-      word_mode = 1;
+      word_mode = true;
   }
   else {
     for (cnt=0; cnt<=6; cnt++) {
       if ((Cur_Line[Cur_Read_Pos] == uml[cnt][0]) && (Cur_Line[Cur_Read_Pos+1] == uml[cnt][1])) {
-        word_mode = 1;
+        word_mode = true;
         break;
       }
     }
   }
 
   // War Sonderzeichen, dieses in dest schieben und raus
-  if (word_mode == 0) {
+  if (word_mode == false) {
     dest->s[0]=Cur_Line[Cur_Read_Pos];
     dest->s[1]='\0';
     Cur_Read_Pos++;
-    return PHSREAD_IS_SPECIAL_CHAR;
+    return PHSHOW_IS_SPECIAL_CHAR;
   }
 
 NextChar:
-  if (writepos >= BUFFSIZE_WORD) return PHSREAD_WORD_OVERLENGTH;
+  if (writepos >= BUFFSIZE_WORD) return PHSHOW_ERR_WORD_OVERLEN;
   // So lange Zeichen rüberkopieren wie Buchstaben kommen
   if ((Cur_Line[Cur_Read_Pos] >= 'a' && Cur_Line[Cur_Read_Pos] <= 'z') ||
     (Cur_Line[Cur_Read_Pos] >= 'A' && Cur_Line[Cur_Read_Pos] <= 'Z')) {
@@ -114,5 +120,5 @@ NextChar:
       goto NextChar;
     }
   }
-  return PHSREAD_IS_WORD;
+  return PHSHOW_IS_WORD;
 }
