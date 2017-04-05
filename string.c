@@ -78,7 +78,7 @@ bool str_to_ascii_upper_word (char *s)
   return true;
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// entfernt einzelne ASCII Zeichen im String die dem übergebenen Zeichen (c) entsprechen,
+// entfernt einzelne Zeichen im String die dem übergebenen Zeichen (c) entsprechen,
 // sodaß diese Zeichen gelöscht werden
 void str_del_ascii_chars (char *s, const char c)
 {
@@ -102,7 +102,7 @@ void str_del_ascii_chars (char *s, const char c)
   }
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// entfernt alle mehrfach hintereinander auftretenden ASCII Zeichen im String,
+// entfernt alle mehrfach hintereinander auftretenden Zeichen im String,
 // sodaß nur noch je eines vorhanden ist
 void str_del_multiple_ascii_chars (char *s)
 {

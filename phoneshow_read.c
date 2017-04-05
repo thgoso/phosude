@@ -20,10 +20,10 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 #include "phonetics.h"
 #include "phoneshow_types.h"
 
+
 // Buffergröße für Zeile kann angepaßt werden
 // Dürfte aber für normale Textdateien ausreichen
 #define BUFFSIZE_LINE 4096
-
 
 static char     Cur_Line[BUFFSIZE_LINE];
 static size_t   Cur_Read_Pos=0;

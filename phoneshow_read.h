@@ -8,7 +8,7 @@
 int read_line (void);
 // Rückgabe:
 // PHSHOW_SUCCESS           Zeile gelesen und lokal gepuffert
-// PH_EOT                   Datenempfang abgeschlossen
+// PHSHOW_END_REACHED       Datenempfang abgeschlossen
 // PHSHOW_ERR_LINE_OVERLEN  Zeile mit Überlänge empfangen
 // ---------------------------------------------------------------------------------------------------------------------
 // Init für read_word, Springt an den Zeilenanfang des lokalen Puffers

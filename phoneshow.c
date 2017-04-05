@@ -166,7 +166,7 @@ static void show_examples (void)
 // Zentrale Exitfunktion
 // Übergabe Statuskonstannte... diese wird ans BS zurückgegeben
 // Gibt bei Fehlerstatus Fehlermeldung aus
-void exit_func (const int status_no)
+static void exit_func (const int status_no)
 {
   if (status_no == PHSHOW_ERR_NAME_UNDERLEN) fprintf(stderr, "phoneshow-de: Name zu kurz zur sinnvollen Suche !\n");
   else if (status_no == PHSHOW_ERR_NAME_OVERLEN) fprintf(stderr, "phoneshow-de: Name zu lang !\n");
@@ -191,7 +191,7 @@ void exit_func (const int status_no)
 // Übergabe:  Anzahl Namen
 // Rückgabe:  Namensliste
 // Bei Fehler Speicherreservierung Sprung zu exit_func und Ende
-nameslist_t create_names_list (const int number_of_names)
+static nameslist_t create_names_list (const int number_of_names)
 {
   int           cnt;
   name_t        *items;

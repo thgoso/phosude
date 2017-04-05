@@ -17,7 +17,7 @@ bool str_to_word_type (const char *src, word_t *dest);
 // ---------------------------------------------------------------------------------------------------------------------
 // Wandelt einen übergebenen String nach ASCII GROSSBUCHSTABEN
 // Umlaute werden ersetzt zu:
-// Ä,ä = AE ; Ü,ü = UE ; Ö,ö = OE ; ß   = SS
+// Ä,ä = AE ; Ü,ü = UE ; Ö,ö = OE ; ß = SS
 // Falls sich danach andere Zeichen als A-Z im String befinden
 // wird dieser geleert '\0' und false zurückgegeben
 // Besteht der String danach nur noch aus A-Z wird true zurückgegeben
