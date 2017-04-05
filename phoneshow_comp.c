@@ -28,9 +28,9 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 //            false wenn keine
 static bool compare_word_name (const name_t *name, const phops_t *phops, const word_t *word)
 {
-  int     lev;
+  int       lev;
   phcode_t  code;
-  word_t  word_upper;
+  word_t    word_upper;
 
   // Wenn keine phonetischen Optionen gewählt
   // Nur Lev Dist auf Name & Wort anwenden
@@ -102,7 +102,7 @@ static bool compare_word_name (const name_t *name, const phops_t *phops, const w
 name_t *compare_word_nameslist (const nameslist_t *list, const phops_t *phops, const word_t *word)
 {
   int    cnt;
-  name_t *name;
+  name_t *name = list->items;
 
   // Wort gegen Minusnamen prüfen, Ende bei EXAKTER Übereinstimmung
   // Natürlich mit NULL (Kein Fund), denn genau DIESE Schreibweise soll ja NICHT ausgegeben werden
@@ -112,15 +112,12 @@ name_t *compare_word_nameslist (const nameslist_t *list, const phops_t *phops, c
     }
   }
 
-  // name zeigt auf Anfang der Liste
-  name = list->items;
-  // Wort gegen normale Namen prüfen, Rückgabe mit Index füllen
+  // Wort gegen normale Namen prüfen
   for (cnt = 0; cnt < list->number_of_names; cnt++) {
-    // Ab 1 Auf nächsten Namen
-    if (cnt > 0) name++;
     if (list->items[cnt].is_minusname == false) {
       if (compare_word_name (name, phops, word) == true) return name;
     }
+    name++;
   }
 
   // Liste ohne Funde durch
