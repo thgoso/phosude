@@ -1,6 +1,4 @@
 /*
-phoneshow_str
-
 Copyright (C) 2015-2017, Thomas Gollmer, th_goso@freenet.de
 Dieses Programm ist freie Software. Sie können es unter den Bedingungen der GNU General Public License,
 wie von der Free Software Foundation veröffentlicht, weitergeben und/oder modifizieren,
@@ -14,121 +12,40 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 */
 
 #include <string.h>
-#include "bool.h"
 #include "string.h"
-#include "phonetics.h"
 
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Kopiert String von *src nach *dest sofern String nicht zu lang ist
-// Falls zu lang wird false zurückgegeben und in *dest '\0'
-// Bei Erfolg wird true zurückgegeben
-bool str_to_word_type (const char *src, word_t *dest)
+// String in GROSSBUCHSTABEN wandeln, deutsche Umlaute inclusive
+void str_to_upper (char *s)
 {
-  if (strlen(src) >= BUFFSIZE_WORD) {
-    dest->s[0] = '\0';
-    return false;
-  }
-  
-  strcpy(dest->s, src);
-  return true;
-}
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// String in ASCII GROSSBUCHSTABEN wandeln, deutsche Umlaute ersetzten
-// Prüfen ob danach ein Wort raus kommt
-bool str_to_ascii_upper_word (char *s)
-{
-  const char  uml[7][3] = {{"Ä"}, {"Ö"}, {"Ü"}, {"ä"}, {"ö"}, {"ü"}, {"ß"}};
-  const char  rep[7][3] = {{"AE"},{"OE"},{"UE"},{"AE"},{"OE"},{"UE"},{"SS"}};
+  const char  uml[4][3] = {{"ä"},{"ö"},{"ü"},{"ß"}};
+  const char  rep[4][3] = {{"Ä"},{"Ö"},{"Ü"},{"SS"}};
   int         cnt;
-  int         replaced;
   size_t      pos=0;
   
-  if (s[0] == '\0') return false;
-  
   while (s[pos] != '\0') {
-    // A-Z
-    if ((s[pos] >= 'A') && (s[pos] <= 'Z')) {
-      pos++;
-      continue;
-    }
     // a-z
     if ((s[pos] >= 'a') && (s[pos] <= 'z')) {
       s[pos] -= 32;
       pos++;
       continue;
     }
-    // Umlaute 0-6
-    replaced=0;
-    for (cnt=0; cnt<=6; cnt++) {
+    // Umlaute 0-3
+    for (cnt=0; cnt<=3; cnt++) {
       if ((s[pos] == uml[cnt][0]) && (s[pos+1] == uml[cnt][1])) {
         s[pos] = rep[cnt][0];
         s[pos+1] = rep[cnt][1];
-        pos+=2;
-        replaced=1;
+        pos++;
         break;
       }
     }
-    if (replaced == 1) continue;
-    // Verbotenes Zeichen angetroffen... String verwerfen
-    s[0]='\0';
-    return false;
-  }
-  // Ohne Fehler durch
-  return true;
-}
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// entfernt einzelne Zeichen im String die dem übergebenen Zeichen (c) entsprechen,
-// sodaß diese Zeichen gelöscht werden
-void str_del_ascii_chars (char *s, const char c)
-{
-  size_t  pos_read=0;
-  size_t  pos_write=0;
-
-  // Sicherheitshalber
-  if (c == '\0') return;
-
-  while (1) {
-    if (s[pos_read] == '\0') {
-      s[pos_write] = '\0';
-      break;
-    }
-    else if (s[pos_read] == c) pos_read++;
-    else {
-      s[pos_write] = s[pos_read];
-      pos_read++;
-      pos_write++;
-    }
-  }
-}
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// entfernt alle mehrfach hintereinander auftretenden Zeichen im String,
-// sodaß nur noch je eines vorhanden ist
-void str_del_multiple_ascii_chars (char *s)
-{
-  size_t  pos_read=0;
-  size_t  pos_write=0;
-  char    last='\0';
-
-  while (1) {
-    if (s[pos_read] == '\0') {
-      s[pos_write] = '\0';
-      break;
-    }
-    else if (s[pos_read] == last) pos_read++;
-    else {
-      last = s[pos_read];
-      s[pos_write] = last;
-      pos_read++;
-      pos_write++;
-    }
+    pos++;
   }
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Levenshtein-Distanz aus http://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Levenshtein_distance
 // Berechnet die Levenshtein-Distanz zweier übergebener Strings
-// Was in dem Fall auf das Wort direkt oder den erzeugten phonetischen Code angewandt werden kann
-// Übergabe:  Pointer auf Wort1 und Wort2
 // Rückgabe:  Distanz als int (immer positiv)
 #define MIN3(a, b, c) ((a) < (b) ? ((a) < (c) ? (a) : (c)) : ((b) < (c) ? (b) : (c)))
 

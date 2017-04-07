@@ -28,8 +28,6 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "bool.h"
-#include "string.h"
 #include "phonetics.h"
 
 // Rückgabekonstannten ans BS
@@ -72,8 +70,8 @@ static void error_exit (int err_no)
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 int main (int argc, char* argv[])
 {
-  word_t   name1, name2;
-  phcode_t code1, code2;
+  phcode_t  code1, code2;
+  int       status1, status2;
   
   // Übergabeparameter prüfen
   // Falsche Anzahl Argumente
@@ -81,35 +79,37 @@ int main (int argc, char* argv[])
 
   // prüfen ob Übergabenamen zu kurz
   if (strlen (argv[2]) < 2 || strlen(argv[3]) < 2) error_exit (PHCOMP_ERR_NAME_UNDERLEN);
-  // Übergabenamen in Strings fester Länge wandeln, Funktion liefert false wenn zu lang
-  if (str_to_word_type(argv[2], &name1) == false) error_exit (PHCOMP_ERR_NAME_OVERLEN);
-  if (str_to_word_type(argv[2], &name2) == false) error_exit (PHCOMP_ERR_NAME_OVERLEN);
-  // In ASCII Großbuchstaben wandeln, Funktion liefert false wenn kein deutsches Wort
-  if (str_to_ascii_upper_word(name1.s) == false) error_exit (PHCOMP_ERR_NAME_NOT_GERMAN);
-  if (str_to_ascii_upper_word(name2.s) == false) error_exit (PHCOMP_ERR_NAME_NOT_GERMAN);
   
-   // Übergabeparameter Codetyp abfragen konvertieren
+  // Codes erstellen, Funktionen liefert Status
   if (strcmp (argv[1], "-k") == 0) {
-    phoneconvert_cologne(&name1, &code1);
-    phoneconvert_cologne(&name2, &code2);
+    status1 = phonetics_get_code (argv[2], code1, PHONETICS_COLOGNE);
+    status2 = phonetics_get_code (argv[3], code2, PHONETICS_COLOGNE);
   }
   else if (strcmp (argv[1], "-p") == 0) {
-    phoneconvert_phonem(&name1, &code1);
-    phoneconvert_phonem(&name2, &code2);
+    status1 = phonetics_get_code (argv[2], code1, PHONETICS_PHONEM);
+    status2 = phonetics_get_code (argv[3], code2, PHONETICS_PHONEM);
   }
   else if (strcmp (argv[1], "-s") == 0) {
-    phoneconvert_soundex(&name1, &code1);
-    phoneconvert_soundex(&name2, &code2);
+    status1 = phonetics_get_code (argv[2], code1, PHONETICS_SOUNDEX);
+    status2 = phonetics_get_code (argv[3], code2, PHONETICS_SOUNDEX);
   }
   else if (strcmp (argv[1], "-e") == 0) {
-    phoneconvert_exsoundex(&name1, &code1);
-    phoneconvert_exsoundex(&name2, &code2);
+    status1 = phonetics_get_code (argv[2], code1, PHONETICS_EXSOUNDEX);
+    status2 = phonetics_get_code (argv[3], code2, PHONETICS_EXSOUNDEX);
   }
   else error_exit (PHCOMP_ERR_PARAM);
-
-  // Erzeugte phon. Codes mit Stringverleich prüfen ob gleich
+  
+  // Fehler bei Codeerzeugung ?
+  if ((status1 == PHONETICS_ERR_NO_WORD) || (status2 == PHONETICS_ERR_NO_WORD)) {
+    error_exit (PHCOMP_ERR_NAME_NOT_GERMAN);
+  }
+  if ((status1 == PHONETICS_ERR_OVERLEN) || (status2 == PHONETICS_ERR_OVERLEN)) {
+    error_exit (PHCOMP_ERR_NAME_OVERLEN);
+  }
+  
+  // Alles klar, Erzeugte phon. Codes mit Stringverleich prüfen ob gleich
   // Ausgabe != oder == und Exitcode
-  if (strcmp (code1.s, code2.s) == 0) {
+  if (strcmp (code1, code2) == 0) {
     printf("%s == %s\n", argv[2], argv[3]);
     return PHCOMP_EQUAL;
   }

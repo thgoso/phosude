@@ -27,8 +27,6 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "bool.h"
-#include "string.h"
 #include "phonetics.h"
 
 // Rückgabekonstannten ans BS
@@ -68,8 +66,8 @@ static void error_exit (int err_no)
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 int main(int argc, char* argv[])
 {
-  word_t   name;
-  phcode_t code;
+  phcode_t  code;
+  int       status;
   
   // Übergabeparameter prüfen
   // Falsche Anzahl Argumente
@@ -77,19 +75,19 @@ int main(int argc, char* argv[])
 
   // prüfen ob Übergabename zu kurz
   if (strlen (argv[2]) < 2) error_exit (PHCODE_ERR_NAME_UNDERLEN);
-  // Übergabename in String fester Länge wandeln, Funktion liefert false wenn zu lang
-  if (str_to_word_type(argv[2], &name) == false) error_exit (PHCODE_ERR_NAME_OVERLEN);
-  // In ASCII Großbuchstaben wandeln, Funktion liefert false wenn kein deutsches Wort
-  if (str_to_ascii_upper_word(name.s) == false) error_exit (PHCODE_ERR_NAME_NOT_GERMAN);
   
-  // Übergabeparameter Codetyp abfragen phonetischen Code erzeugen, Ende wenn unbekannter Parameter
-  if (strcmp (argv[1], "-k") == 0) phoneconvert_cologne(&name, &code);
-  else if (strcmp (argv[1], "-p") == 0) phoneconvert_phonem(&name, &code);
-  else if (strcmp (argv[1], "-s") == 0) phoneconvert_soundex(&name, &code);
-  else if (strcmp (argv[1], "-e") == 0) phoneconvert_exsoundex(&name, &code);
+  // Phonetischen Code in "code" erzeugen je nach Übergabeparam, Funktion liefert Status
+  if (strcmp (argv[1], "-k") == 0) status = phonetics_get_code (argv[2], code, PHONETICS_COLOGNE);
+  else if (strcmp (argv[1], "-p") == 0) status = phonetics_get_code (argv[2], code, PHONETICS_PHONEM);
+  else if (strcmp (argv[1], "-s") == 0) status = phonetics_get_code (argv[2], code, PHONETICS_SOUNDEX);
+  else if (strcmp (argv[1], "-e") == 0) status = phonetics_get_code (argv[2], code, PHONETICS_EXSOUNDEX);
   else error_exit (PHCODE_ERR_PARAM);
-
+  
+  // Gab Probleme bei der Codeerstellung
+  if (status == PHONETICS_ERR_NO_WORD) error_exit(PHCODE_ERR_NAME_NOT_GERMAN);
+  else if (status == PHONETICS_ERR_OVERLEN) error_exit(PHCODE_ERR_NAME_OVERLEN);
+  
   // Alles OK, Code ausgeben
-  printf("%s\n", code.s);
+  printf("%s\n", code);
   return PHCODE_SUCCESS;
 }
