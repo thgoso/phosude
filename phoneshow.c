@@ -104,9 +104,10 @@ int main (int argc, char* argv[])
 
   // Namensliste füllen
   for (name_cnt = 0; name_cnt < number_of_names; name_cnt++) {
-    // Name aus Übergabe holen, Ende wenn zu lang
+    // Name aus Übergabe holen, Ende wenn zu kurz, lang
     param = argv[name_cnt + idxstart];
     if (strlen(param) < 2) exit_func (PHSHOW_ERR_NAME_UNDERLEN);
+    if (strlen(param) >= BUFFSIZE_WORD) exit_func (PHSHOW_ERR_NAME_OVERLEN);
     // Minusnamen... .exclude, .name_norm, .name_upper setzten, Rest default lassen
     if (param[0] == '_') {
       List.items[name_cnt].exclude = true;
@@ -127,10 +128,9 @@ int main (int argc, char* argv[])
         color_cnt++;
       }
       // Immer alle Codes erzeugen, egal welche per Parameter gewählt
-      // Bei Fehler Codeerstellung ist Übergabename kein Wort, oder zu Lang
+      // Bei Fehler Codeerstellung ist Übergabename kein Wort
       for (code_cnt = 0; code_cnt < NUMBER_OF_PHCODES; code_cnt++) {
         status = phonetics_get_code (param, List.items[name_cnt].code[code_cnt], code_cnt);
-        if (status == PHONETICS_ERR_OVERLEN) exit_func (PHSHOW_ERR_NAME_OVERLEN);
         if (status == PHONETICS_ERR_NO_WORD) exit_func (PHSHOW_ERR_NAME_NOT_GERMAN);
       }
     }
