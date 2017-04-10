@@ -90,7 +90,7 @@ int stdin_get_word (word_t dest)
   }
 
 NextChar:
-  if (writepos >= BUFFSIZE_WORD) return STAT_ERR_REC_OVERLEN_WORD;
+  if (writepos >= (BUFFSIZE_WORD - 2)) return STAT_ERR_REC_OVERLEN_WORD;
   // So lange Zeichen rüberkopieren wie deutsche Buchstaben kommen
   if ((Cur_Line[Cur_Read_Pos] >= 'a' && Cur_Line[Cur_Read_Pos] <= 'z') ||
     (Cur_Line[Cur_Read_Pos] >= 'A' && Cur_Line[Cur_Read_Pos] <= 'Z')) {
