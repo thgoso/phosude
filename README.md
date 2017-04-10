@@ -1,42 +1,38 @@
-# phonepack-de
-
-Programmpack für Linux Nutzer die auch mit einem Terminal klar kommen zur phonetischen Namens-, Wortsuche in Textdaten.
+# phosude
+## Phonetische Suche Deutsch
+Für Linux Nutzer die auch mit einem Terminal klar kommen zur phonetischen Namens-, Wortsuche in Textdaten bzw. zum phonetischen codieren von Texten.
 Getestet mit PC Ubuntu Studio 13.10 64 Bit, Lappi Lubuntu 14.10 32 Bit, RaspberryPi Debian Wheezy 32 Bit... alles jeweils mit UTF-8 deutsches System.
 
-#### Enthalten sind 3 Programme:
-- phonecode-de zum Erzeugen von phonetischen Codes zu Namen/Worten
-- phonecomp-de zum Vergleichen von zwei Namen/Worten auf phonetische Gleichheit
-- phoneshow-de zum Durchsuchen von Text auf phonetisch ähnliche Namen/Worte
-
 Implementiert sind die phonetischen Verfahren: Kölner Phonetik, Phonem, Soundex, Extended Soundex.
-Mittelpunkt ist das Programm phoneshow-de mit dem man eine phonetische Wort/Namenssuche in einem Text durchführen kann.
 Zusätzlich zu den phonetischen Suchverfahren ist noch ein Levenshtein Filter integriert, sodaß man egal was man sucht, so ziemlich alles findet.
-Das Programm funktioniert ähnlich "grep" nur daß eben eine phonetische Suche stattfindet.
+Längenangaben können die Suche ebenfalls eingrenzen. Das Programm funktioniert ähnlich "grep" nur daß eben eine phonetische Suche stattfindet.
 
-Die Programme sind auf Grund der phonetischen Verfahren ausschließlich für den **deutschen Sprachraum** angedacht.
+Das Programm ist auf Grund der phonetischen Verfahren ausschließlich für den **deutschen Sprachraum** angedacht.
 
-*Da die Programme phonecode-de und phonecomp-de ehr simpel gehalten sind, wird auf eine Erklärung verzichtet.
-Dafür gehe ich jetzt etwas näher auf das Programm **phoneshow-de** ein. Zum ersten Test kann die Datei **adressbuch.txt** genutzt werden.*
-
-* Aufrufsyntax: phoneshow-de
-* Aufrufsyntax: phoneshow-de [Optionen] Name[n] [_Name[n]]
+* Aufrufsyntax: phosude
+* Aufrufsyntax: phosude Name[n] [_Name[n]] [Optionen]
 * Textübergabe: Textdaten werden von stdin gelesen und in stdout ausgegeben
 
 #### Parameterloser Aufruf
 Eingabetext von stdin wird weitergeleitet an stdout. Zusätzlich werden alle Wörter extrahiert und diese in alle phonetischen Verfahren "übersetzt" ausgegeben.
 #### Aufruf mit Parametern
-Eingabetext von stdin wird durchsucht und bearbeitet in stdout ausgegeben.
+Eingabetext von stdin wird durchsucht und bearbeitet in stdout ausgegeben. Mindestens ein Name ist Pfilch, Rest optional, Reihenfolge Parameter/Namen egal.
 
 ##### Optionsschalter Phonetik
-- **-k** *Kölner Phonetik:* Für den deutschen Sprachraum das Beste
-- **-p** *Phonem:* In manchen dBase Versionen enthalten auch gut für deutsche Namen
-- **-s** *Soundex:* Ehr für englische Namen, aber Standard im Genealogiebereich
-- **-e** *Extended Soundex:* Erweiterte Soundex Variante
+- **-K** *Kölner Phonetik:* Für den deutschen Sprachraum das Beste
+- **-P** *Phonem:* In manchen dBase Versionen enthalten auch gut für deutsche Namen
+- **-S** *Soundex:* Ehr für englische Namen, aber Standard im Genealogiebereich
+- **-E** *Extended Soundex:* Erweiterte Soundex Variante
 
 Alle vier Varianten können einzeln oder kombiniert verwendet werden. Ohne Parameterangabe zum Suchverfahren ist die phonetische Suche inaktiv.
 - **-l** *Levenshtein-Filter*
 
 Wendet Levenshtein-Filter auf die Worte an, wenn kein phonetisches Verfahren gewählt ist, oder auf den erzeugten phonetischen Code, wenn phonetische Verfahren gewählt. Jedes weitere -l erhöht die zulässige Levenshtein-Distanz um eins.
+
+- **--min=X** *Mindestbegrenzung*
+- **--max=X** *Höchstbegrenzung*
+
+Längenangaben Maximal- und/oder Minimallänge für die Worte können festgelegt werden um die Suche weiter einzugrenzen.
 
 ##### Optionsschalter Ausgabe
 - **-a** ganzen Text ausgeben
@@ -58,38 +54,38 @@ Ohne Parameterangabe sind Farbausgabe und Ausgabe der Legende ein- und Zeilennum
 
 ## Verwendung
 ```
-phoneshow-de Müller
+phosude Müller
 ```
 Findet NUR Müller, MÜLLER und müller Zwischen Groß- und Kleinschreibung wird nicht unterschieden.
 ```
-phoneshow-de -l Müller
+phosude -l Müller
 ```
 Findet alle Worte die sich in max. einem Buchstaben unterscheiden, einen Buchstaben mehr oder
 einen weniger haben. Eine phonetische Suche findet hier nicht statt. Findet Mülker Rüller Kmüller
 ```
-phoneshow-de -l -l Müller
+phosude -l -l Müller
 ```
 Jedes -l erhöht die Anzahl in der sich die Namen unterscheiden dürfen. Mit -l -l werden auch Worte
 gefunden die sich um zwei unterscheiden, also 2 Buchstaben mehr, weniger oder andere haben.
 Ebenfalls ohne phonetische Suche. Findet Mücker Küllar Müxxer Müllcker
 Sinnvoll sind max. 2-3 -l Mehr ist möglich aber nicht sehr zweckdienlich.
 ```
-phoneshow-de -k Müller
+phosude -K Müller
 ```
 Findet alle Namen die nach Kölner Phonetik ähnlich zu Müller sind:
 Müller, Mueller, Myller, Müllar, Mülherr, Nüller, Nyller
 ```
-phoneshow-de -p Müller
+phosude -P Müller
 ```
 Das selbe aber mit phonetischem Suchverfahren Phonem:
 Müller, Mueller, Myller, Müllar, Mülherr werden damit gefunden, Nüller und Nyller aber nicht.
 ```
-phoneshow-de -k -p -s -e Müller
+phosude -K -P -S -E Müller --min=5 --max=10
 ```
 Wendet alle phonetischen Verfahren an: Kölner Phonetik, Phonem, Soundex, Extended Soundex.
-Damit werden so ziemlich alle Varianten gefunden.
+Damit werden so ziemlich alle Varianten gefunden. Allerdings nur diese mit 5 bis 10 Buchstaben.
 ```
-phoneshow-de -k -l Müller
+phosude -K -l Müller
 ```
 Wendet Suchverfahren Kölner Phonetik an und schiebt den erzeugten Code durch ein Levenshtein Filter.
 Der phonetische Code für Müller ist in dem Fall 657. Nun werden alle Worte gefunden deren Code sich
@@ -100,48 +96,49 @@ Jedes zusätzliche -l erhört die Zahl an möglichen Abweichungen. 2-3 -l sind O
 #### Name ausschließen mit _Name:
 Bei der Suche können **EXAKTE** Schreibweisen ausgeschlossen werden, wenn man ein _ voranstellt.
 ```
-phoneshow-de -k -p Müller_Mueller
+phosude -K -P Müller_Mueller
 ```
 Zeigt alle Namen die phonetisch ähnlich zu Müller sind, schließ aber die Schreibweise Mueller aus.
 Bei den verbotenen Namen wird zwischen Groß- und Kleinschreibung unterschieden. Das heißt:
 Gefunden werden Müller Möller Myller NICHT ~~Mueller~~ ABER mueller schon (weil Kleingeschrieben).
 ```
-phoneshow-de Müller_Müller
+phosude Müller_Müller
 ```
 Zeigt überhaupt nichts weil die phonetische Suche inaktiv ist.
 ```
-phoneshow-de -k Müller_Müller
+phosude -K Müller_Müller
 ```
 Zeigt alle phonetisch ähnlichen zu Müller, aber nicht die Schreibweise Müller selbst.
 
 ### Praxisbeispiele:
 ```
-cat adressbuch.txt | phoneshow-de -k -p -s -e Udhe
+cat adressbuch.txt | phosude -K -P -S -E Udhe
 ```
 Soll uns alle Udhe und ähnliche zeigen. Allerdings findet man auch hunderte Otto, die stören und nicht benötigt werden.
 ```
-cat adressbuch.txt | phoneshow-de -k -p -s -e Udhe _Otto
+cat adressbuch.txt | phosude -K -P -S -E Udhe _Otto
 ```
 Filtert alle Otto aus und wir bekommen weniger Funde die schon ehr zielführend sind.
 ```
-cat adressbuch.txt | phoneshow-de -k -p -s -e -n -f Thielemann > fundzeilen.txt
+cat adressbuch.txt | phosude -K -P -S -E -n -f Thielemann > fundzeilen.txt
 ```
 Nutz alle phonetischen Suchverfahren, schaltet Zeilennummerierung ein, Farbe aus und schreibt
 alle Zeilen in denen sich etwas ähnliches findet nummeriert in fundzeilen.txt.
 ```
-cat adressbuch.txt | phoneshow-de -k -p -s -e -w -f -x Meier Müller Schulz | sort | uniq -c
+cat adressbuch.txt | phosude -K -P -S -E -w -x Meier Müller Schulz | sort | uniq -c
 ```
 Findet alle phonetisch ähnlichen zu Meier Müller Schulz.
-Schaltet Ausgabe von Farbe und Legende ab, sodaß lediglich die Funde ausgegeben werden.
+Schaltet Ausgabe von Legende ab, sodaß lediglich die Funde ausgegeben werden.
 Leitet durch sort und läßt von uniq zählen, sodaß eine Häufigkeitsliste ausgegeben wird.
 ```
-cat adressbuch.txt | phoneshow-de | egrep "^Worte:|^CodeP:"
+cat adressbuch.txt | phosude | egrep "^Worte:|^CodeP:"
 ```
 Codiert den eingehenden Text, leitet durch egrep und man erhält eine Ausgabe aller im Eingabetext enthaltenen Worte, sowie ihren dazugehörigen Codes des Verahrens Phonem.
 ```
-phoneshow-de
+phosude
 ```
 Programm wartet auf Eingabe von stdin. Über die Tastatur gibt man jetzt ein paar Namen ein:
 > czerny czernie tschernie scherni scerny schärnü
 
 Es werden die Codes der Namen aller phonetischer Verfahren ausgegeben. Gereade hier sieht man, daß für die deutsche Sprache Kölner Phonetik und Phonem klar überlegen sind, denn sie codieren alle diese Namen gleich.
+

@@ -1,4 +1,5 @@
 /*
+phosude stdin.c
 Copyright (C) 2015-2017, Thomas Gollmer, th_goso@freenet.de
 Dieses Programm ist freie Software. Sie können es unter den Bedingungen der GNU General Public License,
 wie von der Free Software Foundation veröffentlicht, weitergeben und/oder modifizieren,
@@ -13,15 +14,10 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 
 #include <stdio.h>
 #include <string.h>
-#include "stdin.h"
+#include "phosude.h"
 
-
-// Buffergröße für Zeile kann angepaßt werden, dürfte aber für normale Textdateien ausreichen
-#define BUFFSIZE_LINE 4096
-
-static char     Cur_Line[BUFFSIZE_LINE];
-static size_t   Cur_Read_Pos=0;
-
+static char     Cur_Line[BUFFSIZE_LINE];    // Zeilenpuffer
+static size_t   Cur_Read_Pos=0;             // Aktuelle Leseposition für get_word
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Init für Funktion stdin_get_word... setzt modulare Variable Cur_Read_Pos auf 0
@@ -45,14 +41,14 @@ int stdin_read_line (void)
   // Buffer leeren
   Cur_Line[0]='\0';
 
-  if(fgets(Cur_Line, BUFFSIZE_LINE, stdin) == NULL) return STDIN_END_REACHED;
+  if(fgets(Cur_Line, BUFFSIZE_LINE, stdin) == NULL) return STAT_END_REACHED;
   else {
     size=strlen(Cur_Line);
-    if (size == BUFFSIZE_LINE - 1) return STDIN_ERR_LINE_OVERLEN;
+    if (size == BUFFSIZE_LINE - 1) return STAT_ERR_REC_OVERLEN_LINE;
     else {
       // Zeilenumbruch entfernen
       if (Cur_Line[size-1] == '\n') Cur_Line[size-1]='\0';
-      return STDIN_SUCCESS;
+      return STAT_SUCCESS;
     }
   }
 }
@@ -69,7 +65,7 @@ int stdin_get_word (word_t dest)
   dest[0]='\0';
   
   // Zeile komplett durch ?
-  if (Cur_Line[Cur_Read_Pos] == '\0') return STDIN_END_REACHED;
+  if (Cur_Line[Cur_Read_Pos] == '\0') return STAT_END_REACHED;
 
   // 1. Zeichen bestimmen Buchstabe oder Sonderzeichen
   if ((Cur_Line[Cur_Read_Pos] >= 'a' && Cur_Line[Cur_Read_Pos] <= 'z') ||
@@ -90,11 +86,11 @@ int stdin_get_word (word_t dest)
     dest[0]=Cur_Line[Cur_Read_Pos];
     dest[1]='\0';
     Cur_Read_Pos++;
-    return STDIN_IS_SPECIAL_CHAR;
+    return STAT_IS_SPECIAL_CHAR;
   }
 
 NextChar:
-  if (writepos >= BUFFSIZE_WORD) return STDIN_ERR_WORD_OVERLEN;
+  if (writepos >= BUFFSIZE_WORD) return STAT_ERR_REC_OVERLEN_WORD;
   // So lange Zeichen rüberkopieren wie deutsche Buchstaben kommen
   if ((Cur_Line[Cur_Read_Pos] >= 'a' && Cur_Line[Cur_Read_Pos] <= 'z') ||
     (Cur_Line[Cur_Read_Pos] >= 'A' && Cur_Line[Cur_Read_Pos] <= 'Z')) {
@@ -114,5 +110,5 @@ NextChar:
       goto NextChar;
     }
   }
-  return STDIN_IS_WORD;
+  return STAT_IS_WORD;
 }

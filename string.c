@@ -1,4 +1,5 @@
 /*
+phosude string.c
 Copyright (C) 2015-2017, Thomas Gollmer, th_goso@freenet.de
 Dieses Programm ist freie Software. Sie können es unter den Bedingungen der GNU General Public License,
 wie von der Free Software Foundation veröffentlicht, weitergeben und/oder modifizieren,
@@ -12,41 +13,155 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 */
 
 #include <string.h>
-#include "string.h"
+#include "phosude.h"
 
+#define NUMBER_OF_UML   7
+static const char Uml[NUMBER_OF_UML][3] = {{"Ä"}, {"Ö"}, {"Ü"}, {"ä"}, {"ö"}, {"ü"}, {"ß"}};
+static const char Rep[NUMBER_OF_UML][3] = {{"AE"},{"OE"},{"UE"},{"AE"},{"OE"},{"UE"},{"SS"}};
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// String in GROSSBUCHSTABEN wandeln, deutsche Umlaute inclusive
-void str_to_upper (char *s)
+// String dynamischer Länge in Fixstring wandeln, sofern er nur aus deutschen Buchstaben besteht
+int str_to_word (const char *src, word_t dest)
 {
-  const char  uml[4][3] = {{"ä"},{"ö"},{"ü"},{"ß"}};
-  const char  rep[4][3] = {{"Ä"},{"Ö"},{"Ü"},{"SS"}};
-  int         cnt;
-  size_t      pos=0;
+  int     cnt;
+  size_t  pos=0;
+
+  // Paßt in Buffer, dann kopieren
+  if (strlen(src) >= BUFFSIZE_WORD) {
+    dest[0] = '\0';
+    return STAT_ERR_OVERLEN_WORD;
+  }
+  else strcpy(dest, src);
   
-  while (s[pos] != '\0') {
-    // a-z
-    if ((s[pos] >= 'a') && (s[pos] <= 'z')) {
-      s[pos] -= 32;
-      pos++;
-      continue;
-    }
-    // Umlaute 0-3
-    for (cnt=0; cnt<=3; cnt++) {
-      if ((s[pos] == uml[cnt][0]) && (s[pos+1] == uml[cnt][1])) {
-        s[pos] = rep[cnt][0];
-        s[pos+1] = rep[cnt][1];
-        pos++;
-        break;
-      }
-    }
+  // Leerstrings sind keine Worte
+  if (dest[0] == '\0') return STAT_ERR_NO_WORD;
+
+NextChar:
+  if (dest[pos] == '\0') return STAT_SUCCESS;
+  if ((dest[pos] >= 'A') && (dest[pos] <= 'Z')) {
     pos++;
+    goto NextChar;
+  }
+  if ((dest[pos] >= 'a') && (dest[pos] <= 'z')) {
+    pos++;
+    goto NextChar;
+  }
+  // Umlaute
+  for (cnt=0; cnt<NUMBER_OF_UML; cnt++) {
+    if ((dest[pos] == Uml[cnt][0]) && (dest[pos+1] == Uml[cnt][1])) {
+      pos+=2;
+      goto NextChar;
+    }
+  }
+  // Da war wohl ein verbotenes Zeichen
+  dest[0]='\0';
+  return STAT_ERR_NO_WORD;
+}
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// String nach ASCII Großbuchstaben wandeln, Nur ASCII Buchstaben und deutsche Umlaute werden ersetzt
+void str_to_ascii_upper (char *s)
+{
+  int     cnt;
+  size_t  pos=0;
+  
+NextChar:
+  if (s[pos] == '\0') return;
+  if ((s[pos] >= 'a') && (s[pos] <= 'z')) {
+    s[pos] -= 32;
+    pos++;
+    goto NextChar;
+  }
+  // Umlaute
+  for (cnt=0; cnt<NUMBER_OF_UML; cnt++) {
+    if ((s[pos] == Uml[cnt][0]) && (s[pos+1] == Uml[cnt][1])) {
+      s[pos] = Rep[cnt][0];
+      s[pos+1] = Rep[cnt][1];
+      pos+=2;
+      goto NextChar;
+    }
+  }
+  pos++;
+  goto NextChar;
+}
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Anzahl deutscher Buchstaben im String bestimmen... A-Z, a-z, ÄÖÜäöüß
+size_t str_count_german_letters (const char *s)
+{
+  size_t  pos=0;
+  size_t  retval=0;
+  size_t  cnt;
+  
+NextChar:
+  if (s[pos] == '\0') return retval;
+  // normale Buchstaben
+  if ((s[pos] >= 'A') && (s[pos] <= 'Z')) {
+     retval++;
+     pos++;
+     goto NextChar;
+  }
+  if ((s[pos] >= 'a') && (s[pos] <= 'z')) {
+    retval++;
+    pos++;
+    goto NextChar;
+  }
+  // Umlaute
+  for (cnt=0; cnt<=6; cnt++) {
+    if ((s[pos] == Uml[cnt][0]) && (s[pos+1] == Uml[cnt][1])) {
+      retval++;
+      pos+=2;
+      goto NextChar;
+    }
+  }
+  // Weder noch
+  pos++;
+  goto NextChar;
+}
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Zeichen die übergebenem "c" entsprechen aus String entfernen
+void str_del_chars (char *s, const char c)
+{
+  size_t  pos_read=0;
+  size_t  pos_write=0;
+
+  // Sicherheitshalber (wäre blöd das zu löschen)
+  if (c == '\0') return;
+
+  while (1) {
+    if (s[pos_read] == '\0') {
+      s[pos_write] = '\0';
+      break;
+    }
+    else if (s[pos_read] == c) pos_read++;
+    else {
+      s[pos_write] = s[pos_read];
+      pos_read++;
+      pos_write++;
+    }
   }
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Levenshtein-Distanz aus http://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Levenshtein_distance
-// Berechnet die Levenshtein-Distanz zweier übergebener Strings
-// Rückgabe:  Distanz als int (immer positiv)
+// Alle mehrfach hintereinander auftretenden Zeichen (Typ char) im String reduzieren auf eins
+void str_del_multiple_chars (char *s)
+{
+  size_t  pos_read=0;
+  size_t  pos_write=0;
+  char    last_char='\0';
+
+  while (1) {
+    if (s[pos_read] == '\0') {
+      s[pos_write] = '\0';
+      break;
+    }
+    else if (s[pos_read] == last_char) pos_read++;
+    else {
+      last_char = s[pos_read];
+      s[pos_write] = last_char;
+      pos_read++;
+      pos_write++;
+    }
+  }
+}
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #define MIN3(a, b, c) ((a) < (b) ? ((a) < (c) ? (a) : (c)) : ((b) < (c) ? (b) : (c)))
 
 int str_lev (const char *s1, const char *s2)
