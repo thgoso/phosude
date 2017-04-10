@@ -151,11 +151,7 @@ int parse_nameslist (const int argc, char* argv[], nameslist_t *list)
   // Speicher für items in Namesliste anfordern, Ende bei MEM Error
   list->number_of_names = parser_count_names(argc, argv);
   if (list->number_of_names == 0) return STAT_ERR_PARAM;
-//  list->items = (name_t*) malloc( (list->number_of_names) * sizeof( name_t ));
-
   list->items = malloc ((list->number_of_names) * sizeof (name_t));
-
-
   if (list->items == NULL) return STAT_ERR_MEM;
   
   // Namensliste füllen, Ende bei Fehler
