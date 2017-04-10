@@ -7,7 +7,7 @@ Implementiert sind die phonetischen Verfahren: Kölner Phonetik, Phonem, Soundex
 Zusätzlich zu den phonetischen Suchverfahren ist noch ein Levenshtein Filter integriert, sodaß man egal was man sucht, so ziemlich alles findet.
 Längenangaben können die Suche ebenfalls eingrenzen. Das Programm funktioniert ähnlich "grep" nur daß eben eine phonetische Suche stattfindet.
 
-Das Programm ist auf Grund der phonetischen Verfahren ausschließlich für den **deutschen Sprachraum** angedacht.
+Das Programm ist auf Grund der phonetischen Verfahren ausschließlich für den **deutschen Sprachraum** angedacht. Für erste Tests bietet sich die Datei *Adressbuch.txt* an. Gesucht und gefunden werden nur deutschen Namen/Wörtern. Erlaubt sind also alle Zeichen von A-Z, a-z, ÄÖÜäöüß im Suchnamen.
 
 * Aufrufsyntax: phosude
 * Aufrufsyntax: phosude Name[n] [_Name[n]] [Optionen]
