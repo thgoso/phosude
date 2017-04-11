@@ -27,10 +27,28 @@ void str_del_chars (char *s, const char c);
 // entfernt alle mehrfach hintereinander auftretenden Zeichen Typ char im String, sodaß nur noch je eines vorhanden ist
 void str_del_multiple_chars (char *s);
 // ---------------------------------------------------------------------------------------------------------------------
+// Ersetzt Zeichenketten im String "s" die "from" entsprechen durch "to"
+// Such- und Ersatzeichenfolge müssen die selbe Größe haben
+void str_replace_same_size (char *s, const char *from, const char *to);
+// ---------------------------------------------------------------------------------------------------------------------
+// Ersetzt in "s" Gruppen gleicher Buchstaben "from" durch einzelnen "to"
+// str_replace_group_with_one ("Schifffahrtshafenschiffer", 'f', 'X');
+//                                  ^^^       ^      ^^
+// ergibt "SchiXahrtshafenschiXer"
+//             ^       ^      ^
+void str_replace_group_with_one (char *s, const char from, const char to);
+// ---------------------------------------------------------------------------------------------------------------------
 // Levenshtein-Distanz aus http://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Levenshtein_distance
 // Berechnet die Levenshtein-Distanz zweier übergebener Strings
 // Rückgabe:  Distanz als int (immer positiv)
 int str_lev (const char *s1, const char *s2);
 // ---------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
 
 #endif // PHOSUDE_STRING

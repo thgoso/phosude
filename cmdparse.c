@@ -154,7 +154,7 @@ int parse_nameslist (const int argc, char* argv[], nameslist_t *list)
   list->items = malloc ((list->number_of_names) * sizeof (name_t));
   if (list->items == NULL) return STAT_ERR_MEM;
   
-  // Namensliste füllen, Ende bei Fehler
+  // Namensliste füllen, Status durchreichen
   return (parser_fill_nameslist (argc, argv, list));
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

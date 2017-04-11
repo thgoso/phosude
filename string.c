@@ -20,6 +20,38 @@ static const char Uml[NUMBER_OF_UML][3] = {{"Ä"}, {"Ö"}, {"Ü"}, {"ä"}, {"ö"
 static const char Rep[NUMBER_OF_UML][3] = {{"AE"},{"OE"},{"UE"},{"AE"},{"OE"},{"UE"},{"SS"}};
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Private Funktionen
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Findet das erste Auftreten einer Buchstabengruppe gleicher Buchstaben im String
+// Übergabe:  String in "s"
+//            Buchstabe dessen Gruppe gefunden werden soll "letter"
+// Rückgabe:  true bei Fund   Startposition der Gruppe in "start"
+//                            Länge der Gruppe in "len"
+//            false wenn keine Gruppe von Buchstaben bestehend aus "letter" gefunden wurde             
+static bool find_group (const char *s, const char letter, size_t *start, size_t *len)
+{
+  size_t  pos=0;
+  
+  while (s[pos] != '\0') {
+    if (s[pos] != letter) {
+      pos++;
+      continue;
+    }
+    else {
+      *start = pos;
+      *len=0;
+      while (s[pos] == letter) {
+        *len+=1;
+        pos++;
+      }
+      if (*len > 1) return true;
+    }
+  }    
+  return false;
+}
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Öffentliche Funktionen
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // String dynamischer Länge in Fixstring wandeln, sofern er nur aus deutschen Buchstaben besteht
 int str_to_word (const char *src, word_t dest)
 {
@@ -159,6 +191,47 @@ void str_del_multiple_chars (char *s)
       pos_read++;
       pos_write++;
     }
+  }
+}
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Stringreplace Funktion
+// Ersetzt in "s" alle "from" durch "to"... Suche und Ersatz müssen gleich groß sein
+void str_replace_same_size (char *s, const char *from, const char *to)
+{
+  char        *pos;
+  const char  *cnt;
+      
+  // Sicherheitshalber
+  if (strlen(from) != strlen(to)) return;
+    
+  while (1) {
+    cnt = to;
+    pos = strstr(s, from);
+    if (pos == NULL) break;
+    while (*cnt != '\0') {
+      *pos = *cnt;
+      pos++;
+      cnt++;
+    }
+  }
+}
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Ersetzt in "s" alle Nacheinander auftretenden "from" durch ein einziges "to"
+void str_replace_group_with_one (char *s, const char from, const char to)
+{
+  size_t  matchpos, matchlen;
+  size_t  readpos, writepos;
+  
+  while (find_group(s, from, &matchpos, &matchlen) != false) {
+    s[matchpos] = to;
+    readpos = matchpos + matchlen;
+    writepos = matchpos + 1;
+    while (s[readpos] != '\0') {
+      s[writepos] = s[readpos];
+      writepos++;
+      readpos++;
+    }
+    s[writepos] = '\0';
   }
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

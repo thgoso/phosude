@@ -23,22 +23,25 @@
 #define PH_PHONEM                         1
 #define PH_SOUNDEX                        2
 #define PH_EXSOUNDEX                      3
-#define PH_NUMBER_OF_CODES                4
+#define PH_CAVERPHONE                     4
+#define PH_NUMBER_OF_CODES                5
 // ---------------------------------------------------------------------------------------------------------------------
 // Kurzzeichen für phonetische Verfahren, Name und Kurzbeschreibung
 // Index passend zu obigen Konstannten
-static const char PhCodeSign[PH_NUMBER_OF_CODES][2] = {{"K"}, {"P"}, {"S"}, {"E"}};
+static const char PhCodeSign[PH_NUMBER_OF_CODES][2] = {{"K"}, {"P"}, {"S"}, {"E"}, {"C"}};
 static const char PhCodeName[PH_NUMBER_OF_CODES][32] = {
   {"Kölner Phonetik"}, 
   {"Phonem"},
   {"Soundex"}, 
-  {"Extended Soundex"}
+  {"Extended Soundex"},
+  {"Caverphone"}
 };
 static const char PhCodeDescription[PH_NUMBER_OF_CODES][64] = {
   {"für deutsche Namen am Besten"}, 
   {"gut für deutsche Namen"},
   {"weniger für deutsche Namen geeignet"}, 
-  {"erweiterte Soundex Variante"}
+  {"erweiterte Soundex Variante"},
+  {"ebenfalls ehr für englische Namen"}
 };
 // ---------------------------------------------------------------------------------------------------------------------
 // Buffergröße für Zeile kann angepaßt werden, dürfte aber für normale Textdateien ausreichen

@@ -11,6 +11,8 @@ Soundex           Für deutsche Namen nicht ganz geeignet, aber Standard bei Gen
                   Alphanumerischer Code, fixe Länge, Format Buchstabe gefolgt von 3 Ziffern
 Extended Soundex  Erweiterung von Soundex
                   Numerischer Code, fixe Länge, 5 Ziffern
+Caverphone v2.0   Alphabetischer Code mit fixer Länge von 10 Füllzeichen wenn unter 10 = "1"
+                  Sehr auf Englisch ausgelegt, macht aber mit deutschen Namen auch keinen schlechten Eindruck
 
 
 Copyright (C) 2015-2017, Thomas Gollmer, th_goso@freenet.de
@@ -39,25 +41,24 @@ static void show_help (void)
   int cnt;
   
   printf(
-    "\n\033[1mphosude:         Phonetische Suche von Namen/Wörtern in Text\033[m\n"
-    "Aufruf           phosude\n"
-    "                 Eingabetext von stdin wird weitergeleitet an stdout. Zusätzlich werden alle Wörter\n"
-    "                 extrahiert und diese in alle phonetischen Verfahren \"übersetzt\" ausgegeben.\n"
-    "---------------------------------------------------------------------------------------------------\n"
-    "Aufruf           phosude Name[n] [_Name[n]] [Optionen]\n"
-    "                 Ein Name Pflicht, Rest optional, Reihenfolge egal\n"
+    "phosude:         Phonetische Codierung und Suche von Namen/Wörtern in Text\n"
+    "Aufruf           phosude [Name[n]] [_Name[n]] [Optionen]\n"
     "Übergabe         Textdaten von stdin\n"
     "Rückgabe         Textdaten formatiert in stdout\n"
+    "Ohne Parameter   Es werden aus dem Übergabetext alle Wörter extrahiert und diese in\n"
+    "                 alle phonetischen Verfahren \"übersetzt\" ausgegeben.\n"
+    "Mit Parameter    Es wird im Übergabetext nach phonetisch ähnlichen Namen/Wörtern\n"
+    "                 gesuchsucht und diese formatiert ausgegeben.\n"
+    "                 Ein Suchname -wort Pflicht, Rest optional, Reihenfolge egal\n"
     "Name[n]          Ein oder mehrere Namen nach denen gesucht werden soll\n"
-    "_Name[n]         Ein oder mehrere Namen die bei der Suche ausgelassen werden sollen\n"
-  );
+    "_Name[n]         Ein oder mehrere Namen die bei der Suche ausgelassen werden sollen\n");
   
   printf("Suchvervahren -%s %s: %s\n", PhCodeSign[0], PhCodeName[0], PhCodeDescription[0]);
   for (cnt = 1; cnt < PH_NUMBER_OF_CODES; cnt++) {
     printf("              -%s %s: %s\n", PhCodeSign[cnt], PhCodeName[cnt], PhCodeDescription[cnt]);
   }
-  printf("                 Alle %i Varianten können einzeln oder kombiniert verwendet werden.\n", PH_NUMBER_OF_CODES);
-    
+  printf(
+    "                 Alle %i Varianten können einzeln oder kombiniert verwendet werden.\n", PH_NUMBER_OF_CODES);
   printf(
     "                 Ohne Parameterangabe zum Suchverfahren ist die phonetische Suche inaktiv.\n"
     "Längenangaben    Maximal- und/oder Minimallänge für die Worte können festgelegt werden\n"
@@ -77,44 +78,36 @@ static void show_help (void)
     "Nummerierung  -n Zeilennummerierung einschalten\n"
     "Farbe         -f Farbausgabe abschalten         (z.B. bei Weiterleitung in eine Datei)\n"
     "Legende       -x Ausgabe der Legende abschalten (z.B. bei Weiterleitung in eine Datei)\n"
-    "Hilfe         -h Zeigt diese Hilfe an\n"
-    "---------------------------------------------------------------------------------------------------\n"
-  );
-  printf("Exitcode       %i keine Fehler\n",
-                         STAT_SUCCESS);
-  printf("               %i wenn Name zu kurz zum sinnvollen codieren\n",
-                         STAT_ERR_UNDERLEN_WORD);
-  printf("               %i wenn Name zu lang\n",
-                         STAT_ERR_OVERLEN_WORD);
-  printf("               %i wenn unerlaubte Zeichen im Namen enthalten sind\n",
-                         STAT_ERR_NO_WORD);
-  printf("               %i wenn falsche Aufrufparameter\n",
-                         STAT_ERR_PARAM);
-  printf("               %i wenn von stdin Textzeile in Überlänge empfangen wurde\n",
-                         STAT_ERR_REC_OVERLEN_LINE);
-  printf("               %i wenn von stdin Wort in Überlänge empfangen wurde\n",
-                         STAT_ERR_REC_OVERLEN_WORD);
-  printf("               %i wenn es bei Speicheranfordeung zu Problemen kam\n\n",
-                         STAT_ERR_MEM);
+    "Hilfe         -h Zeigt diese Hilfe an\n");
+  
+  printf("Exitcode       %i keine Fehler\n", STAT_SUCCESS);
+  printf("               %i wenn Name zu kurz zum sinnvollen codieren\n", STAT_ERR_UNDERLEN_WORD);
+  printf("               %i wenn Name zu lang\n", STAT_ERR_OVERLEN_WORD);
+  printf("               %i wenn unerlaubte Zeichen im Namen enthalten sind\n", STAT_ERR_NO_WORD);
+  printf("               %i wenn falsche Aufrufparameter\n", STAT_ERR_PARAM);
+  printf("               %i wenn von stdin Textzeile in Überlänge empfangen wurde\n", STAT_ERR_REC_OVERLEN_LINE);
+  printf("               %i wenn von stdin Wort in Überlänge empfangen wurde\n", STAT_ERR_REC_OVERLEN_WORD);
+  printf("               %i wenn es bei Speicheranfordeung zu Problemen kam\n", STAT_ERR_MEM);
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 static void show_err_msg (const int err_no)
 {
-  if (err_no == STAT_ERR_UNDERLEN_WORD) fprintf(stderr, "phosude: Name zu kurz zur sinnvollen Suche !\n");
-  else if (err_no == STAT_ERR_OVERLEN_WORD) fprintf(stderr, "phosude: Name zu lang !\n");
-  else if (err_no == STAT_ERR_NO_WORD) fprintf(stderr, "phosude: Name enthält Sonderzeichen !\n");
-  else if (err_no == STAT_ERR_MEM) fprintf(stderr, "phosude: Fehler bei Speicheranforderung !\n");
-  else if (err_no == STAT_ERR_REC_OVERLEN_LINE) fprintf(stderr, "phosude: Suche Abgebrochen !\n"
-                                                               "Zeile von stdin hat Überlänge !\n");
-  else if (err_no == STAT_ERR_REC_OVERLEN_WORD) fprintf(stderr, "phosude: Suche Abgebrochen !\n"
-                                                               "Wort von stdin hat Überlänge !\n");
-  else if (err_no == STAT_ERR_PARAM) {
-    fprintf(stderr, "phosude: Falsche Aufrufparameter !\n"
-      "Aufruf:  phosude\n"
-      "Aufruf:  phosude [Optionen] Name[n] [_Name[n]]\n"
-      "Hilfe:   phosude -h\n\n");
-  }
-  
+  if (err_no == STAT_ERR_UNDERLEN_WORD) 
+    fprintf(stderr, "phosude: Name zu kurz zur sinnvollen Suche !\n");
+  else if (err_no == STAT_ERR_OVERLEN_WORD) 
+    fprintf(stderr, "phosude: Name zu lang !\n");
+  else if (err_no == STAT_ERR_NO_WORD) 
+    fprintf(stderr, "phosude: Name enthält Sonderzeichen !\n");
+  else if (err_no == STAT_ERR_REC_OVERLEN_LINE) 
+    fprintf(stderr, "phosude: Suche Abgebrochen: Zeile von stdin hat Überlänge !\n");
+  else if (err_no == STAT_ERR_REC_OVERLEN_WORD) 
+    fprintf(stderr, "phosude: Suche Abgebrochen: Wort von stdin hat Überlänge !\n");
+  else if (err_no == STAT_ERR_MEM) 
+    fprintf(stderr, "phosude: Fehler bei Speicheranforderung !\n");
+  else if (err_no == STAT_ERR_PARAM) 
+    fprintf(stderr,  "phosude: Falscher Aufrufparameter !\n"
+                     "Aufruf:  phosude [Name[n]] [_Name[n]] [Optionen]\n"
+                     "Hilfe:   phosude -h\n");
   else if (err_no == STAT_ERR_HELP) show_help();
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

@@ -23,7 +23,6 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 static void make_soundex (phcode_t dest)
 {
   char    first;
-  size_t  size;
   size_t  pos=0;
   
   // 1. Zeichen aus dest merken und in dest mit '-' ausmaskieren
@@ -64,18 +63,14 @@ static void make_soundex (phcode_t dest)
 
   // gemerktes 1. Zeichen wieder nach dest schieben... Alles auf 4 Stellen kürzen/0en anhängen
   dest[0]=first;
-  size=strlen(dest);
-  if (size == 1) strcat (dest, "000");
-  else if (size == 2) strcat (dest, "00");
-  else if (size == 3) strcat (dest, "0");
-  else if (size > 4) dest[4]='\0';
+  if (strlen(dest) < 4) strcat(dest, "0000");
+  dest[4] = '\0';
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Extended Soundex Verfahren
 // Wenn Wort in dest Platz hat, paßt der Code auch da hinein
 static void make_exsoundex (phcode_t dest)
 {
-  size_t  size;
   size_t  pos=0;
 
   // Ersetzungsregeln auf dest anwenden
@@ -120,13 +115,8 @@ static void make_exsoundex (phcode_t dest)
   str_del_chars(dest, '0');
 
   // Auf 5 Stellen kürzen / mit "0" auffüllen
-  size=strlen(dest);
-  if (size == 0) strcat (dest, "00000");
-  else if (size == 1) strcat (dest, "0000");
-  else if (size == 2) strcat (dest, "000");
-  else if (size == 3) strcat (dest, "00");
-  else if (size == 4) strcat (dest, "0");
-  else dest[5]='\0';
+  if (strlen(dest) < 5) strcat (dest, "00000");
+  dest[5]='\0';
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Kölner Phonetik Verfahren
@@ -383,6 +373,96 @@ static void make_phonem (phcode_t dest)
   if (dest[0] == '\0') strcpy(dest, "---");
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Caverphone v2.0
+static void make_caverphone (phcode_t dest)
+{
+  size_t  len;
+  char    first;
+  
+  // REMOVE FINAL E
+  len = strlen(dest);
+  if (dest[len-1] == 'E') dest[len-1] = '\0';
+  // IF THE NAME STARTS WITH COUGH MAKE IT COU2F
+  // IF THE NAME STARTS WITH ROUGH MAKE IT ROU2F
+  // IF THE NAME STARTS WITH TOUGH MAKE IT TOU2F
+  if ((strncmp(dest, "COUGH", 5)== 0) || (strncmp(dest, "ROUGH", 5)== 0) || (strncmp(dest, "TOUGH", 5)== 0)) {
+    dest[3] = '2';
+  }
+  // IF THE NAME STARTS WITH ENOUGH MAKE IT ENOU2F
+  // IF THE NAME STARTS WITH TROUGH MAKE IT TROU2F
+  if ((strncmp(dest, "ENOUGH", 6)== 0) || (strncmp(dest, "TROUGH", 6)== 0)) dest[4] = '2';
+  // IF THE NAME STARTS WITH GN MAKE IT 2N
+  if (strncmp(dest, "GN", 2)== 0) dest[0] = '2';
+  // IF THE NAME ENDS WITH MB MAKE IT M2
+  len = strlen(dest);
+  if ((dest[len-2] == 'M') && (dest[len-1] == 'B')) dest[len-1] = '2';
+  str_replace_same_size (dest, "CQ", "2Q");     // REPLACE CQ WITH 2Q
+  str_replace_same_size (dest, "CI", "SI");     // REPLACE CI WITH SI
+  str_replace_same_size (dest, "CE", "SE");     // REPLACE CE WITH SE
+  str_replace_same_size (dest, "CY", "SY");     // REPLACE CY WITH SY
+  str_replace_same_size (dest, "TCH", "2CH");   // REPLACE TCH WITH 2CH
+  str_replace_same_size (dest, "C", "K");       // REPLACE C WITH K
+  str_replace_same_size (dest, "Q", "K");       // REPLACE Q WITH K
+  str_replace_same_size (dest, "X", "K");       // REPLACE X WITH K
+  str_replace_same_size (dest, "V", "F");       // REPLACE V WITH F
+  str_replace_same_size (dest, "DG", "2G");     // REPLACE DG WITH 2G
+  str_replace_same_size (dest, "TIO", "SIO");   // REPLACE TIO WITH SIO
+  str_replace_same_size (dest, "TIA", "SIA");   // REPLACE TIA WITH SIA
+  str_replace_same_size (dest, "D", "T");       // REPLACE D WITH T
+  str_replace_same_size (dest, "PH", "FH");     // REPLACE PH WITH FH
+  str_replace_same_size (dest, "B", "P");       // REPLACE B WITH P
+  str_replace_same_size (dest, "SH", "S2");     // REPLACE SH WITH S2
+  str_replace_same_size (dest, "Z", "S");       // REPLACE Z WITH S
+  // REPLACE AN INITIAL VOWEL WITH AN a 
+  // REPLACE ALL OTHER VOWELS WITH A 3
+  first = dest[0];
+  if ((first == 'A') || (first == 'E') || (first == 'I') || (first == 'O') || (first == 'U')) first = 'a';
+  str_replace_same_size (dest, "A", "3");
+  str_replace_same_size (dest, "E", "3");
+  str_replace_same_size (dest, "I", "3");
+  str_replace_same_size (dest, "O", "3");
+  str_replace_same_size (dest, "U", "3");
+  dest[0] = first;
+  str_replace_same_size (dest, "J", "Y");       // REPLACE J WITH Y
+  if (strncmp(dest, "Y3", 2) ==0) dest[0]='y';  // REPLACE AN INITIAL Y3 WITH y3
+  if (dest[0] == 'Y') dest[0] = 'a';            // REPLACE AN INITIAL Y WITH a
+  str_replace_same_size (dest, "Y", "3");       // REPLACE Y WITH 3
+  str_replace_same_size (dest, "3GH3", "3KH3"); // REPLACE 3GH3 WITH 3KH3
+  str_replace_same_size (dest, "GH", "22");     // REPLACE GH WITH 22
+  str_replace_same_size (dest, "G", "K");       // REPLACE G WITH K
+  str_replace_group_with_one (dest, 'S', 's');  // REPLACE GROUPS OF THE LETTER S WITH A s
+  str_replace_group_with_one (dest, 'T', 't');  // REPLACE GROUPS OF THE LETTER T WITH A t
+  str_replace_group_with_one (dest, 'P', 'p');  // REPLACE GROUPS OF THE LETTER P WITH A p
+  str_replace_group_with_one (dest, 'K', 'k');  // REPLACE GROUPS OF THE LETTER K WITH A k
+  str_replace_group_with_one (dest, 'F', 'f');  // REPLACE GROUPS OF THE LETTER F WITH A f
+  str_replace_group_with_one (dest, 'M', 'm');  // REPLACE GROUPS OF THE LETTER M WITH A m
+  str_replace_group_with_one (dest, 'N', 'n');  // REPLACE GROUPS OF THE LETTER N WITH A n
+  str_replace_same_size (dest, "W3", "w3");     // REPLACE W3 WITH w3
+  str_replace_same_size (dest, "WH3", "wH3");   // REPLACE WH3 WITH wH3
+  len = strlen(dest);                           // IF THE NAME ENDS IN W REPLACE THE FINAL W WITH 3
+  if (dest[len-1] == 'W') dest[len-1] = '3';
+  str_replace_same_size (dest, "W", "2");       // REPLACE W WITH 2
+  if (dest[0] == 'H') dest[0] = 'a';            // REPLACE AN INITIAL H WITH AN a
+  str_replace_same_size (dest, "H", "2");       // REPLACE ALL OTHER OCCURRENCES OF H WITH A 2
+  str_replace_same_size (dest, "R3", "r3");     // REPLACE R3 WITH r3
+  len = strlen(dest);                           // IF THE NAME ENDS IN R REPLACE THE REPLACE FINAL R WITH 3
+  if (dest[len-1] == 'R') dest[len-1] = '3';
+  str_replace_same_size (dest, "R", "2");       // REPLACE R WITH 2
+  str_replace_same_size (dest, "L3", "l3");     // REPLACE L3 WITH l3
+  len = strlen(dest);                           // IF THE NAME ENDS IN L REPLACE THE REPLACE FINAL L WITH 3
+  if (dest[len-1] == 'L') dest[len-1] = '3';
+  str_replace_same_size (dest, "L", "2");       // REPLACE L WITH 2
+  str_del_chars (dest, '2');                    // REMOVE ALL 2S
+  len = strlen(dest);                           // IF THE NAME END IN 3, REPLACE THE FINAL 3 WITH a
+  if (dest[len-1] == '3') dest[len-1] = 'a';
+  str_del_chars (dest, '3');                    // REMOVE ALL 3S
+  // PUT TEN 1S ON THE END
+  // TAKE THE FIRST TEN CHARACTERS AS THE CODE
+  if (strlen(dest) < 10) strcat (dest, "1111111111");
+  dest[10] = '\0';
+  str_to_ascii_upper (dest);
+}
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Öffentliche Funktion
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // phonetschen Code erstellen
@@ -399,6 +479,7 @@ void phonetics_get_code (const word_t src, phcode_t dest, const int code_no)
   else if (code_no == PH_PHONEM) make_phonem (dest);
   else if (code_no == PH_SOUNDEX) make_soundex (dest);
   else if (code_no == PH_EXSOUNDEX) make_exsoundex (dest);
+  else if (code_no == PH_CAVERPHONE) make_caverphone (dest);
   
   // Fehlerhafte Codenummer
   else dest[0] = '\0';
