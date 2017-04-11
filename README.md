@@ -23,8 +23,9 @@ Eingabetext von stdin wird durchsucht und bearbeitet in stdout ausgegeben. Minde
 - **-P** *Phonem:* In manchen dBase Versionen enthalten auch gut für deutsche Namen
 - **-S** *Soundex:* Ehr für englische Namen, aber Standard im Genealogiebereich
 - **-E** *Extended Soundex:* Erweiterte Soundex Variante
+- **-C** *Caverphone v2.0:* Ebenfalls mehr für englische Namen geeignet
 
-Alle vier Varianten können einzeln oder kombiniert verwendet werden. Ohne Parameterangabe zum Suchverfahren ist die phonetische Suche inaktiv.
+Alle Varianten können einzeln oder kombiniert verwendet werden. Ohne Parameterangabe zum Suchverfahren ist die phonetische Suche inaktiv.
 - **-l** *Levenshtein-Filter*
 
 Wendet Levenshtein-Filter auf die Worte an, wenn kein phonetisches Verfahren gewählt ist, oder auf den erzeugten phonetischen Code, wenn phonetische Verfahren gewählt. Jedes weitere -l erhöht die zulässige Levenshtein-Distanz um eins.
@@ -80,9 +81,9 @@ phosude -P Müller
 Das selbe aber mit phonetischem Suchverfahren Phonem:
 Müller, Mueller, Myller, Müllar, Mülherr werden damit gefunden, Nüller und Nyller aber nicht.
 ```
-phosude -K -P -S -E Müller --min=5 --max=10
+phosude -K -P -S -E -C Müller --min=5 --max=10
 ```
-Wendet alle phonetischen Verfahren an: Kölner Phonetik, Phonem, Soundex, Extended Soundex.
+Wendet alle phonetischen Verfahren an: Kölner Phonetik, Phonem, Soundex, Extended Soundex, Caverphone.
 Damit werden so ziemlich alle Varianten gefunden. Allerdings nur diese mit 5 bis 10 Buchstaben.
 ```
 phosude -K -l Müller
@@ -112,20 +113,20 @@ Zeigt alle phonetisch ähnlichen zu Müller, aber nicht die Schreibweise Müller
 
 ### Praxisbeispiele:
 ```
-cat adressbuch.txt | phosude -K -P -S -E Udhe
+cat adressbuch.txt | phosude -K -P Udhe
 ```
 Soll uns alle Udhe und ähnliche zeigen. Allerdings findet man auch hunderte Otto, die stören und nicht benötigt werden.
 ```
-cat adressbuch.txt | phosude -K -P -S -E Udhe _Otto
+cat adressbuch.txt | phosude -K -P Udhe _Otto
 ```
 Filtert alle Otto aus und wir bekommen weniger Funde die schon ehr zielführend sind.
 ```
-cat adressbuch.txt | phosude -K -P -S -E -n -f Thielemann > fundzeilen.txt
+cat adressbuch.txt | phosude -K -P -S -E -C -n -f Thielemann > fundzeilen.txt
 ```
 Nutz alle phonetischen Suchverfahren, schaltet Zeilennummerierung ein, Farbe aus und schreibt
 alle Zeilen in denen sich etwas ähnliches findet nummeriert in fundzeilen.txt.
 ```
-cat adressbuch.txt | phosude -K -P -S -E -w -x Meier Müller Schulz | sort | uniq -c
+cat adressbuch.txt | phosude -K -P -w -x Meier Müller Schulz | sort | uniq -c
 ```
 Findet alle phonetisch ähnlichen zu Meier Müller Schulz.
 Schaltet Ausgabe von Legende ab, sodaß lediglich die Funde ausgegeben werden.
