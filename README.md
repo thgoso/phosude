@@ -3,14 +3,13 @@
 Für Linux Nutzer die auch mit einem Terminal klar kommen zur phonetischen Namens-, Wortsuche in Textdaten bzw. zum phonetischen codieren von Texten.
 Getestet mit PC Ubuntu Studio 13.10 64 Bit, Lappi Lubuntu 14.10 32 Bit, RaspberryPi Debian Wheezy 32 Bit... alles jeweils mit UTF-8 deutsches System.
 
-Implementiert sind die phonetischen Verfahren: Kölner Phonetik, Phonem, Soundex, Extended Soundex.
+Implementiert sind die phonetischen Verfahren: Kölner Phonetik, Phonem, Soundex, Extended Soundex, Caverphone.
 Zusätzlich zu den phonetischen Suchverfahren ist noch ein Levenshtein Filter integriert, sodaß man egal was man sucht, so ziemlich alles findet.
 Längenangaben können die Suche ebenfalls eingrenzen. Das Programm funktioniert ähnlich "grep" nur daß eben eine phonetische Suche stattfindet.
 
-Das Programm ist auf Grund der phonetischen Verfahren ausschließlich für den **deutschen Sprachraum** angedacht. Für erste Tests bietet sich die Datei *Adressbuch.txt* an. Gesucht und gefunden werden nur deutschen Namen/Wörtern. Erlaubt sind also alle Zeichen von A-Z, a-z, ÄÖÜäöüß im Suchnamen.
+Das Programm ist auf Grund der phonetischen Verfahren ausschließlich für den **deutschen Sprachraum** und bestenfalls noch für englische Namen angedacht. Für erste Tests bietet sich die Datei *Adressbuch.txt* an. Gesucht und gefunden werden nur Namen/Wörtern in deutscher Schreibweise. Erlaubt sind also alle Zeichen von A-Z, a-z, ÄÖÜäöüß im Suchnamen.
 
-* Aufrufsyntax: phosude
-* Aufrufsyntax: phosude Name[n] [_Name[n]] [Optionen]
+* Aufrufsyntax: phosude [Name[n]] [_Name[n]] [Optionen]
 * Textübergabe: Textdaten werden von stdin gelesen und in stdout ausgegeben
 
 #### Parameterloser Aufruf
@@ -101,7 +100,7 @@ phosude -K -P Müller_Mueller
 ```
 Zeigt alle Namen die phonetisch ähnlich zu Müller sind, schließ aber die Schreibweise Mueller aus.
 Bei den verbotenen Namen wird zwischen Groß- und Kleinschreibung unterschieden. Das heißt:
-Gefunden werden Müller Möller Myller NICHT ~~Mueller~~ ABER mueller schon (weil Kleingeschrieben).
+Gefunden werden Müller Möller Myller. NICHT aber ~~Mueller~~ jedoch mueller schon (weil Kleingeschrieben).
 ```
 phosude Müller_Müller
 ```
