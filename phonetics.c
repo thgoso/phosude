@@ -395,7 +395,9 @@ static void make_caverphone (phcode_t dest)
   if (strncmp(dest, "GN", 2)== 0) dest[0] = '2';
   // IF THE NAME ENDS WITH MB MAKE IT M2
   len = strlen(dest);
-  if ((dest[len-2] == 'M') && (dest[len-1] == 'B')) dest[len-1] = '2';
+  if (len >= 2) {
+    if ((dest[len-2] == 'M') && (dest[len-1] == 'B')) dest[len-1] = '2';
+  }
   str_replace_same_size (dest, "CQ", "2Q");     // REPLACE CQ WITH 2Q
   str_replace_same_size (dest, "CI", "SI");     // REPLACE CI WITH SI
   str_replace_same_size (dest, "CE", "SE");     // REPLACE CE WITH SE
