@@ -3,11 +3,10 @@
 Für Linux Nutzer die auch mit einem Terminal klar kommen zur phonetischen Namens-, Wortsuche in Textdaten bzw. zum phonetischen codieren von Texten.
 Getestet mit PC Ubuntu Studio 13.10 64 Bit, Lappi Lubuntu 14.10 32 Bit, RaspberryPi Debian Wheezy 32 Bit... alles jeweils mit UTF-8 deutsches System.
 
-Implementiert sind die phonetischen Verfahren: Kölner Phonetik, Phonem, Soundex, Extended Soundex, Caverphone.
-Zusätzlich zu den phonetischen Suchverfahren ist noch ein Levenshtein Filter integriert, sodaß man egal was man sucht, so ziemlich alles findet.
+Implementiert sind die phonetischen Verfahren: Kölner Phonetik, Phonem, Soundex, Extended Soundex, Caverphone, Daitch-Mokotoff. Zusätzlich zu den phonetischen Suchverfahren ist noch ein Levenshtein Filter integriert, sodaß man egal was man sucht, so ziemlich alles findet.
 Längenangaben können die Suche ebenfalls eingrenzen. Das Programm funktioniert ähnlich "grep" nur daß eben eine phonetische Suche stattfindet.
 
-Das Programm ist auf Grund der phonetischen Verfahren ausschließlich für den **deutschen Sprachraum** und bestenfalls noch für englische Namen angedacht. Für erste Tests bietet sich die Datei *Adressbuch.txt* an. Gesucht und gefunden werden nur Namen/Wörtern in deutscher Schreibweise. Erlaubt sind also alle Zeichen von A-Z, a-z, ÄÖÜäöüß im Suchnamen.
+Das Programm ist auf Grund der phonetischen Verfahren ausschließlich für Namen/Worte in **deutscher Schreibweise** angedacht. Das heißt: Gesucht und gefunden werden nur Namen/Worte in deutscher Schreibweise. Erlaubt sind also alle Zeichen von A-Z, a-z, ÄÖÜäöüß im Suchnamen. Für erste Tests bietet sich die Datei *Adressbuch.txt* an.
 
 * Aufrufsyntax: phosude [Name[n]] [_Name[n]] [Optionen]
 * Textübergabe: Textdaten werden von stdin gelesen und in stdout ausgegeben
@@ -23,6 +22,7 @@ Eingabetext von stdin wird durchsucht und bearbeitet in stdout ausgegeben. Minde
 - **-S** *Soundex:* Ehr für englische Namen, aber Standard im Genealogiebereich
 - **-E** *Extended Soundex:* Erweiterte Soundex Variante
 - **-C** *Caverphone v2.0:* Ebenfalls mehr für englische Namen geeignet
+- **-D** *Daitch-Mokotoff:* Gut für osteuropäische, schlesische, jüdische Namen
 
 Alle Varianten können einzeln oder kombiniert verwendet werden. Ohne Parameterangabe zum Suchverfahren ist die phonetische Suche inaktiv.
 - **-l** *Levenshtein-Filter*
@@ -80,9 +80,9 @@ phosude -P Müller
 Das selbe aber mit phonetischem Suchverfahren Phonem:
 Müller, Mueller, Myller, Müllar, Mülherr werden damit gefunden, Nüller und Nyller aber nicht.
 ```
-phosude -K -P -S -E -C Müller --min=5 --max=10
+phosude -K -P -S -E -C -D Müller --min=5 --max=10
 ```
-Wendet alle phonetischen Verfahren an: Kölner Phonetik, Phonem, Soundex, Extended Soundex, Caverphone.
+Wendet alle phonetischen Verfahren an: Kölner Phonetik, Phonem, Soundex, Extended Soundex, Caverphone, Daitch-Mokotoff.
 Damit werden so ziemlich alle Varianten gefunden. Allerdings nur diese mit 5 bis 10 Buchstaben.
 ```
 phosude -K -l Müller
