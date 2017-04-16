@@ -181,37 +181,23 @@ static void daitchmok_to_collection (const daitchmok_t src, collection_t *dest)
 // Fügt EINE Codestringversion EINEM Element in Codearray zu
 // Codestring kann aus einem oder zwei Ziffern bestehen
 // Hilfsfunktion zu "collection_add_string"
-static void collection_add_version (const char *s, collection_t *dest, const int elem_no)
+static inline void collection_add_version (const char *s, collection_t *dest, const int elem_no)
 {
-  size_t  len_s, len_code;
-  char    last;
+  size_t  len;
   
   // Ende wenn Element schon voll
-  len_code = strlen(dest->version[elem_no]);
-  if (len_code >= 6) return;
-  len_s = strlen(s);
-  last = dest->version[elem_no][len_code-1];
+  len = strlen(dest->version[elem_no]);
+  if (len >= 6) return;
+
+  // 1. Zeichen einfügen
+  dest->version[elem_no][len] = s[0];
+  dest->version[elem_no][len+1] = '\0';
   
-  // s besteht nur aus einem Zeichen...
-  // zufügen wenn Vorgänger nicht gleich, Ende
-  // Nichts zufügen wenn Vorgänger Gleich, Ende
-  if (len_s == 1) {
-    if (last == s[0]) return;
-    strcat(dest->version[elem_no], s);
-    return;
+  // 2. Zeichen wenn vorhanden und Platz
+  if ((len <= 4) && (s[1] != '\0')) {
+    dest->version[elem_no][len+1] = s[1];
+    dest->version[elem_no][len+2] = '\0';
   }
-  
-  // s besteht aus zwei Zeichen
-  // 1. Zufügen wenn ungleich Vorgänger
-  if (s[0] != last) {
-    dest->version[elem_no][len_code] = s[0];
-    dest->version[elem_no][len_code+1] = '\0';
-  }
-  // 2 Zeichen immer zufügen, wenns rein paßt
-  len_code = strlen(dest->version[elem_no]);
-  if (len_code >= 6) return;
-  dest->version[elem_no][len_code] = s[1];
-  dest->version[elem_no][len_code+1] = '\0';
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Fügt dem Codearray einen String zu
