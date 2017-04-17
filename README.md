@@ -25,6 +25,8 @@ Eingabetext von stdin wird durchsucht und bearbeitet in stdout ausgegeben. Minde
 - **-D** *Daitch-Mokotoff:* Gut für osteuropäische, schlesische, jüdische Namen
 
 Alle Varianten können einzeln oder kombiniert verwendet werden. Ohne Parameterangabe zum Suchverfahren ist die phonetische Suche inaktiv.
+
+*Bei der Suche nach Standard-Namen (Müller Meier Schulze) bietet sich die Kombination -K -P an. Option -D ist prädestiniert für Namen mit osteuropäischem, schlesischem Klang: Czmellszek, Cichoz, Lippszyc. Verfahren -S -E -C sind ehr auf englische Schreibweisen ausgelegt: Stevenson, Thorn, Gayleen*
 - **-l** *Levenshtein-Filter*
 
 Wendet Levenshtein-Filter auf die Worte an, wenn kein phonetisches Verfahren gewählt ist, oder auf den erzeugten phonetischen Code, wenn phonetische Verfahren gewählt. Jedes weitere -l erhöht die zulässige Levenshtein-Distanz um eins.
