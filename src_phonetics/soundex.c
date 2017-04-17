@@ -37,6 +37,7 @@ void make_soundex (const word_t src, soundex_t dest)
   str_del_chars (tmp, 'H');
 
   // Ersetzungsregeln auf tmp anwenden
+  // Recherche Internet sagt: Vowel meint bei Soundex AEIOU UND Y
   while (tmp[pos] != '\0') {
     switch (tmp[pos]) {
       case 'A': case 'I': case 'E': case 'O': case 'U': case 'Y':

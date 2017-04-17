@@ -21,7 +21,7 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 // Regel ohne "/"    ... Es gibt nur eine Variante
 // Regel enthält "/" ... Es gibt 2 Varianten
 // Regel ist ""      ... Keine Codierung
-#define NUMBER_OF_RULES 120
+#define NUMBER_OF_RULES 115
 
 static const struct {
   char  phrase[8];
@@ -29,127 +29,122 @@ static const struct {
   char  rule_before_vowel[8];
   char  rule_else[8];
 } Rules[NUMBER_OF_RULES] = {
-// Phrase   Starregel vor Vokal  Sonst
-  {"AI",      "0",      "1",      ""      },
-  {"AJ",      "0",      "1",      ""      },
-  {"AY",      "0",      "1",      ""      },
-  {"AU",      "0",      "7",      ""      },
-  {"A",       "0",      "",       ""      },
-  {"B",       "7",      "7",      "7"     },
-  {"CHS",     "5",      "54",     "54"    },
-  {"CSZ",     "4",      "4",      "4"     },
-  {"CZS",     "4",      "4",      "4"     },
-  {"CH",      "5/4",    "5/4",    "5/4"   },
-  {"CK",      "5/45",   "5/45",   "5/45"  },
-  {"CZ",      "4",      "4",      "4"     },
-  {"CS",      "4",      "4",      "4"     },
-  {"C",       "5/4",    "5/4",    "5/4"   },
-  {"DRZ",     "4",      "4",      "4"     },
-  {"DRS",     "4",      "4",      "4"     },
-  {"DSH",     "4",      "4",      "4"     },
-  {"DSZ",     "4",      "4",      "4"     },
-  {"DZH",     "4",      "4",      "4"     },
-  {"DZS",     "4",      "4",      "4"     },
-  {"DS",      "4",      "4",      "4"     },
-  {"DZ",      "4",      "4",      "4"     },
-  {"DT",      "3",      "3",      "3"     },
-  {"D",       "3",      "3",      "3"     },
-  {"EI",      "0",      "1",      ""      },
-  {"EJ",      "0",      "1",      ""      },
-  {"EY",      "0",      "1",      ""      },
-  {"EU",      "1",      "1",      ""      },
-  {"E",       "0",      "",       ""      },
-  {"FB",      "7",      "7",      "7"     },
-  {"F",       "7",      "7",      "7"     },
-  {"G",       "5",      "5",      "5"     },
-  {"H",       "5",      "5",      ""      },
-  {"IA",      "1",      "",       ""      },
-  {"IE",      "1",      "",       ""      },
-  {"IO",      "1",      "",       ""      },
-  {"IU",      "1",      "",       ""      },
-  {"I",       "0",      "",       ""      },
-  {"J",       "1/4",    "1/4",    "1/4"   },
-  {"KS",      "5",      "54",     "54"    },
-  {"KH",      "5",      "5",      "5"     },
-  {"K",       "5",      "5",      "5"     },
-  {"L",       "8",      "8",      "8"     },
-  {"MN",      "",       "66",     "66"    },
-  {"M",       "6",      "6",      "6"     },
-  {"NM",      "",       "66",     "66"    },
-  {"N",       "6",      "6",      "6"     },
-  {"OI",      "0",      "1",      ""      },
-  {"OJ",      "0",      "1",      ""      },
-  {"OY",      "0",      "1",      ""      },
-  {"O",       "0",      "",       ""      },
-  {"PF",      "7",      "7",      "7"     },
-  {"PH",      "7",      "7",      "7"     },
-  {"P",       "7",      "7",      "7"     },
-  {"Q",       "5",      "5",      "5"     },
-  {"RZ",      "94/4",   "94/4",   "94/4"  },
-  {"RS",      "94/4",   "94/4",   "94/4"  },
-  {"R",       "9",      "9",      "9"     },
-  {"SCHTSCH", "2",      "4",      "4"     },
-  {"SCHTSH",  "2",      "4",      "4"     },
-  {"SCHTCH",  "2",      "4",      "4"     },
-  {"STSCH",   "2",      "4",      "4"     },
-  {"SHTSH",   "2",      "4",      "4"     },
-  {"SHTCH",   "2",      "4",      "4"     },
-  {"SHCH",    "2",      "4",      "4"     },
-  {"STCH",    "2",      "4",      "4"     },
-  {"STRZ",    "2",      "4",      "4"     },
-  {"STRS",    "2",      "4",      "4"     },
-  {"STSH",    "2",      "4",      "4"     },
-  {"SZCZ",    "2",      "4",      "4"     },
-  {"SZCS",    "2",      "4",      "4"     },
-  {"SCHT",    "2",      "43",     "43"    },
-  {"SCHD",    "2",      "43",     "43"    },
-  {"SHT",     "2",      "43",     "43"    },
-  {"SZT",     "2",      "43",     "43"    },
-  {"SHD",     "2",      "43",     "43"    },
-  {"SZD",     "2",      "43",     "43"    },
-  {"SCH",     "4",      "4",      "4"     },
-  {"SH",      "4",      "4",      "4"     },
-  {"SC",      "2",      "4",      "4"     },
-  {"ST",      "2",      "43",     "43"    },
-  {"SD",      "2",      "43",     "43"    },
-  {"SZ",      "4",      "4",      "4"     },
-  {"S",       "4",      "4",      "4"     },
-  {"TTSCH",   "4",      "4",      "4"     },
-  {"TSCH",    "4",      "4",      "4"     },
-  {"TTCH",    "4",      "4",      "4"     },
-  {"TTSZ",    "4",      "4",      "4"     },
-  {"TCH",     "4",      "4",      "4"     },
-  {"TRS",     "4",      "4",      "4"     },
-  {"TZ",      "4",      "4",      "4"     },
-  {"TTZ",     "4",      "4",      "4"     },
-  {"TZS",     "4",      "4",      "4"     },
-  {"TSZ",     "4",      "4",      "4"     },
-  {"TTS",     "4",      "4",      "4"     },
-  {"TSH",     "4",      "4",      "4"     },
-  {"TRZ",     "4",      "4",      "4"     },
-  {"TC",      "4",      "4",      "4"     },
-  {"TS",      "4",      "4",      "4"     },
-  {"TH",      "3",      "3",      "3"     },
-  {"T",       "3",      "3",      "3"     },
-  {"UI",      "0",      "1",      ""      },
-  {"UJ",      "0",      "1",      ""      },
-  {"UY",      "0",      "1",      ""      },
-  {"UE",      "0",      "",       ""      },
-  {"U",       "0",      "",       ""      },
-  {"V",       "7",      "7",      "7"     },
-  {"W",       "7",      "7",      "7"     },
-  {"X",       "5",      "54",     "54"    },
-  {"Y",       "1",      "",       ""      },
-  {"ZHDZH",   "2",      "4",      "4"     },
-  {"ZDZH",    "2",      "4",      "4"     },
-  {"ZSCH",    "4",      "4",      "4"     },
-  {"ZSH",     "4",      "4",      "4"     },
-  {"ZHD",     "2",      "43",     "43"    },
-  {"ZDZ",     "2",      "4",      "4"     },
-  {"ZD",      "2",      "43",     "43"    },
-  {"ZH",      "4",      "4",      "4"     },
-  {"ZS",      "4",      "4",      "4"     },
-  {"Z",       "4",      "4",      "4"     }
+  // Phrase   Starregel vor Vokal  Sonst
+  {  "AI",      "0",      "1",      ""      },
+  {  "AJ",      "0",      "1",      ""      },
+  {  "AY",      "0",      "1",      ""      },
+  {  "AU",      "0",      "7",      ""      },
+  {  "A",       "0",      "",       ""      },
+  {  "B",       "7",      "7",      "7"     },
+  {  "CHS",     "5",      "54",     "54"    },
+  {  "CSZ",     "4",      "4",      "4"     },
+  {  "CZS",     "4",      "4",      "4"     },
+  {  "CH",      "5/4",    "5/4",    "5/4"   },
+  {  "CK",      "5/45",   "5/45",   "5/45"  },
+  {  "CZ",      "4",      "4",      "4"     },
+  {  "CS",      "4",      "4",      "4"     },
+  {  "C",       "5/4",    "5/4",    "5/4"   },
+  {  "DRZ",     "4",      "4",      "4"     },
+  {  "DRS",     "4",      "4",      "4"     },
+  {  "DSH",     "4",      "4",      "4"     },
+  {  "DSZ",     "4",      "4",      "4"     },
+  {  "DZH",     "4",      "4",      "4"     },
+  {  "DZS",     "4",      "4",      "4"     },
+  {  "DS",      "4",      "4",      "4"     },
+  {  "DZ",      "4",      "4",      "4"     },
+  {  "DT",      "3",      "3",      "3"     },
+  {  "D",       "3",      "3",      "3"     },
+  {  "EI",      "0",      "1",      ""      },
+  {  "EJ",      "0",      "1",      ""      },
+  {  "EY",      "0",      "1",      ""      },
+  {  "EU",      "1",      "1",      ""      },
+  {  "E",       "0",      "",       ""      },
+  {  "FB",      "7",      "7",      "7"     },
+  {  "F",       "7",      "7",      "7"     },
+  {  "G",       "5",      "5",      "5"     },
+  {  "H",       "5",      "5",      ""      },
+  {  "IA",      "1",      "",       ""      },
+  {  "IE",      "1",      "",       ""      },
+  {  "IO",      "1",      "",       ""      },
+  {  "IU",      "1",      "",       ""      },
+  {  "I",       "0",      "",       ""      },
+  {  "J",       "1/4",    "1/4",    "1/4"   },
+  {  "KS",      "5",      "54",     "54"    },
+  {  "KH",      "5",      "5",      "5"     },
+  {  "K",       "5",      "5",      "5"     },
+  {  "L",       "8",      "8",      "8"     },
+  {  "MN",      "66",     "66",     "66"    },
+  {  "M",       "6",      "6",      "6"     },
+  {  "NM",      "66",     "66",     "66"    },
+  {  "N",       "6",      "6",      "6"     },
+  {  "OI",      "0",      "1",      ""      },
+  {  "OJ",      "0",      "1",      ""      },
+  {  "OY",      "0",      "1",      ""      },
+  {  "O",       "0",      "",       ""      },
+  {  "PF",      "7",      "7",      "7"     },
+  {  "PH",      "7",      "7",      "7"     },
+  {  "P",       "7",      "7",      "7"     },
+  {  "Q",       "5",      "5",      "5"     },
+  {  "RZ",      "94/4",   "94/4",   "94/4"  },
+  {  "RS",      "94/4",   "94/4",   "94/4"  },
+  {  "R",       "9",      "9",      "9"     },
+  {  "SCHTSCH", "2",      "4",      "4"     },
+  {  "SCHTSH",  "2",      "4",      "4"     },
+  {  "SCHTCH",  "2",      "4",      "4"     },
+  {  "STSCH",   "2",      "4",      "4"     },
+  {  "SHTSH",   "2",      "4",      "4"     },
+  {  "SHTCH",   "2",      "4",      "4"     },
+  {  "SHCH",    "2",      "4",      "4"     },
+  {  "STCH",    "2",      "4",      "4"     },
+  {  "STRZ",    "2",      "4",      "4"     },
+  {  "STRS",    "2",      "4",      "4"     },
+  {  "STSH",    "2",      "4",      "4"     },
+  {  "SZCZ",    "2",      "4",      "4"     },
+  {  "SZCS",    "2",      "4",      "4"     },
+  {  "SCHT",    "2",      "43",     "43"    },
+  {  "SCHD",    "2",      "43",     "43"    },
+  {  "SHT",     "2",      "43",     "43"    },
+  {  "SZT",     "2",      "43",     "43"    },
+  {  "SHD",     "2",      "43",     "43"    },
+  {  "SZD",     "2",      "43",     "43"    },
+  {  "SCH",     "4",      "4",      "4"     },
+  {  "SH",      "4",      "4",      "4"     },
+  {  "SC",      "2",      "4",      "4"     },
+  {  "ST",      "2",      "43",     "43"    },
+  {  "SD",      "2",      "43",     "43"    },
+  {  "SZ",      "4",      "4",      "4"     },
+  {  "S",       "4",      "4",      "4"     },
+  {  "TSCH",    "4",      "4",      "4"     },
+  {  "TCH",     "4",      "4",      "4"     },
+  {  "TRS",     "4",      "4",      "4"     },
+  {  "TRZ",     "4",      "4",      "4"     },
+  {  "TSH",     "4",      "4",      "4"     },
+  {  "TZS",     "4",      "4",      "4"     },
+  {  "TSZ",     "4",      "4",      "4"     },
+  {  "TC",      "4",      "4",      "4"     },
+  {  "TS",      "4",      "4",      "4"     },
+  {  "TZ",      "4",      "4",      "4"     },
+  {  "TH",      "3",      "3",      "3"     },
+  {  "T",       "3",      "3",      "3"     },
+  {  "UI",      "0",      "1",      ""      },
+  {  "UJ",      "0",      "1",      ""      },
+  {  "UY",      "0",      "1",      ""      },
+  {  "UE",      "0",      "",       ""      },
+  {  "U",       "0",      "",       ""      },
+  {  "V",       "7",      "7",      "7"     },
+  {  "W",       "7",      "7",      "7"     },
+  {  "X",       "5",      "54",     "54"    },
+  {  "Y",       "1",      "",       ""      },
+  {  "ZHDZH",   "2",      "4",      "4"     },
+  {  "ZDZH",    "2",      "4",      "4"     },
+  {  "ZSCH",    "4",      "4",      "4"     },
+  {  "ZSH",     "4",      "4",      "4"     },
+  {  "ZHD",     "2",      "43",     "43"    },
+  {  "ZDZ",     "2",      "4",      "4"     },
+  {  "ZD",      "2",      "43",     "43"    },
+  {  "ZH",      "4",      "4",      "4"     },
+  {  "ZS",      "4",      "4",      "4"     },
+  {  "Z",       "4",      "4",      "4"     }
 };
 
 // Für ein Sammlung von Codevarianten
@@ -210,6 +205,8 @@ static inline void collection_add_version (const char *s, collection_t *dest, co
 // An einen String werden nur Zeichen angefügt, so lange dieser noch nicht voll ist (6Stellen)
 static void collection_add_string (const char *s, collection_t *dest)
 {
+  char  vgem[8];
+  char  *token;
   char  v1[4] = "";
   char  v2[4] = "";
   int   cnt, read_cnt, write_cnt;
@@ -218,19 +215,15 @@ static void collection_add_string (const char *s, collection_t *dest)
     
   // 1. Variante extrahieren nach v1
   // Mögliche zweite Variante nach v2 (oder leer lassen) 
-  {
-    char  vgem[8];
-    char  *token;
-    strcpy (vgem, s);
-    token = strtok(vgem, "/");
-    token = strtok(NULL, "/");
-    if (token == NULL) strcpy(v1, vgem);
-    else {
-      strcpy(v1, vgem);
-      strcpy(v2, token);
-    }
+  strcpy (vgem, s);
+  token = strtok(vgem, "/");
+  token = strtok(NULL, "/");
+  if (token == NULL) strcpy(v1, vgem);
+  else {
+    strcpy(v1, vgem);
+    strcpy(v2, token);
   }
-  
+
   // Noch keine Elemente in dest.code... 
   // eine oder zwei Versionen zufügen, Anzahl korrigieren, Ende
   if (dest->number_of_codes == 0) {
@@ -274,9 +267,12 @@ void make_daitchmok (const word_t src, daitchmok_t dest)
   int           rule_cnt, write_cnt, read_cnt;
   char          item[8];
    
-  // src nach tmp kopieren, in ASCII Groß wandeln, list "0"en, p zeigt auf Start von tmp (diehnt als Lesezeiger)
+  // src nach tmp kopieren, in ASCII Groß wandeln, Doppelte Buchstaben gleich vereinzeln
   strcpy(tmp, src);
   str_to_ascii_upper(tmp);
+  str_del_multiple_chars(tmp);
+  
+  // list "0"en, p zeigt auf Start von tmp (diehnt als Lesezeiger)
   list.number_of_codes = 0;
   p = tmp;
 
@@ -296,6 +292,7 @@ NextPrase:
       else {
         p+=strlen(Rules[rule_cnt].phrase);
         // rule_before_vowel anwenden
+        // Recherche Internet sagt: Vowel meint bei Daitch-Mokotoff AEIOU UND Y
         if ((*p == 'A') || (*p == 'E') || (*p == 'I') || (*p == 'O') || (*p == 'U') || (*p == 'Y')) {
           collection_add_string (Rules[rule_cnt].rule_before_vowel, &list);
         }

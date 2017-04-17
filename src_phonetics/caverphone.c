@@ -66,15 +66,14 @@ void make_caverphone (const word_t src, caverphone_t dest)
   str_replace_same_size (tmp, "Z", "S");        // REPLACE Z WITH S
   // REPLACE AN INITIAL VOWEL WITH AN a 
   // REPLACE ALL OTHER VOWELS WITH A 3
+  // Recherche Internet sagt: Vowel meint bei Coverphone 2.0 AEIOU OHNE Y
   first = tmp[0];
-  if ((first == 'A') || (first == 'E') || (first == 'I') || 
-    (first == 'O') || (first == 'U') || (first == 'Y')) first = 'a';
+  if ((first == 'A') || (first == 'E') || (first == 'I') || (first == 'O') || (first == 'U')) first = 'a';
   str_replace_same_size (tmp, "A", "3");
   str_replace_same_size (tmp, "E", "3");
   str_replace_same_size (tmp, "I", "3");
   str_replace_same_size (tmp, "O", "3");
   str_replace_same_size (tmp, "U", "3");
-  str_replace_same_size (tmp, "Y", "3");
   tmp[0] = first;
   str_replace_same_size (tmp, "J", "Y");        // REPLACE J WITH Y
   if (strncmp(tmp, "Y3", 2) ==0) tmp[0]='y';    // REPLACE AN INITIAL Y3 WITH y3
