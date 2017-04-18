@@ -20,8 +20,7 @@
 #define STAT_ERR_PARAM              4   // Fehlerhafte Übergabeparameter von Commandline
 #define STAT_ERR_REC_OVERLEN_LINE   5   // Zeile mit Überlänge von stdin empfangen
 #define STAT_ERR_REC_OVERLEN_WORD   6   // Wort mit Überlänge von stdin empfangen
-#define STAT_ERR_MEM                7   // Fehler beim Speicher anfordern
-#define STAT_ERR_HELP               8   // Parameter -h wurde übergeben (Hilfe anzeigen)
+#define STAT_ERR_HELP               7   // Parameter -h wurde übergeben (Hilfe anzeigen)
 // ---------------------------------------------------------------------------------------------------------------------
 // Rückgabekonstannten Funktionen die nicht bis zum BS laufen (ab 10 nutzen)
 #define STAT_IS_WORD                10  // Beim lesen von stdin gültiges Wort erhalten

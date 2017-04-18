@@ -36,8 +36,6 @@ zusammen mit diesem Programm erhalten haben. Falls nicht, siehe <http://www.gnu.
 #include "src_io/textprint.h"
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Private Funktionen
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 static void show_help (void)
 {
   printf(
@@ -70,7 +68,7 @@ static void show_help (void)
     "              -z nur Fundzeilen ausgeben\n"
     "              -w nur Fundworte ausgeben\n"
     "              -c zu Funden die Positionen innerhalb der Zeilen und Längen ausgeben.\n"
-    "                 Fundzeile(1...) Fundposition(1...) Wortlänge(in 'char' gemessen)\n"
+    "                 Fundzeile(1...n) Fundposition(1...n) Wortlänge(in 'char' gemessen)\n"
     "                 Eine der 4 Ausgabevarianten kann gewählt werden.\n"
     "                 Ohne Parameterangabe zur Ausgabe ist -z aktiv.\n"
     "Verbose Modus -v Textausgabe erfolgt incl. Analyseansicht\n"
@@ -87,71 +85,73 @@ static void show_help (void)
   printf("               %i wenn falsche Aufrufparameter\n", STAT_ERR_PARAM);
   printf("               %i wenn von stdin Textzeile in Überlänge empfangen wurde\n", STAT_ERR_REC_OVERLEN_LINE);
   printf("               %i wenn von stdin Wort in Überlänge empfangen wurde\n", STAT_ERR_REC_OVERLEN_WORD);
-  printf("               %i wenn es bei Speicheranfordeung zu Problemen kam\n", STAT_ERR_MEM);
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-static void show_err_msg (const int err_no)
+// Zentrale Exitfunktion... Beendet Programm, gibt ggf. Fehlertext aus
+// Gibt übergebene Statusnummer ans BS zurück
+static void exit_func (const int stat_no)
 {
-  if (err_no == STAT_ERR_NAME_UNDERLEN) 
+  if (stat_no == STAT_ERR_NAME_UNDERLEN) 
     fprintf(stderr, "phosude: Name zu kurz zur sinnvollen Suche !\n");
-  else if (err_no == STAT_ERR_NAME_OVERLEN) 
+  else if (stat_no == STAT_ERR_NAME_OVERLEN) 
     fprintf(stderr, "phosude: Name zu lang !\n");
-  else if (err_no == STAT_ERR_NAME_NO_WORD) 
+  else if (stat_no == STAT_ERR_NAME_NO_WORD) 
     fprintf(stderr, "phosude: Name enthält Sonderzeichen !\n");
-  else if (err_no == STAT_ERR_REC_OVERLEN_LINE) 
+  else if (stat_no == STAT_ERR_REC_OVERLEN_LINE) 
     fprintf(stderr, "phosude: Suche Abgebrochen: Zeile von stdin hat Überlänge !\n");
-  else if (err_no == STAT_ERR_REC_OVERLEN_WORD) 
+  else if (stat_no == STAT_ERR_REC_OVERLEN_WORD) 
     fprintf(stderr, "phosude: Suche Abgebrochen: Wort von stdin hat Überlänge !\n");
-  else if (err_no == STAT_ERR_MEM) 
-    fprintf(stderr, "phosude: Fehler bei Speicheranforderung !\n");
-  else if (err_no == STAT_ERR_PARAM) 
+  else if (stat_no == STAT_ERR_PARAM) 
     fprintf(stderr,  "phosude: Falscher Aufrufparameter !\n"
                      "Aufruf:  phosude [Name[n]] [_Name[n]] [Optionen]\n"
                      "Hilfe:   phosude -h\n");
-  else if (err_no == STAT_ERR_HELP) show_help();
+  else if (stat_no == STAT_ERR_HELP) show_help();
+
+  exit (stat_no);
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 int main (int argc, char* argv[])
 {
-  nameslist_t list = {0, NULL};     // Namensliste mit allen Zusatzinfos
+  nameslist_t list;                 // Namensliste mit allen Zusatzinfos
   phops_t     phops;                // Optionen Phonetik
   frmops_t    frmops;               // Optionen Formatierung
   outops_t    outops;               // Optionen Ausgabemodus
   int         stat;                 // Stausnummer... wird ans BS durchgereicht
 
   // Falls keine Argumente übergeben, Konvertierroutine aufrufen
-  // Gibt STAT_SUCCESS oder Fehlerkonstannte zurück
+  // Gibt Statuskonstannte für exit_func zurück
   if (argc == 1) {
     stat = printout_convert();
-    if (stat != STAT_SUCCESS) show_err_msg (stat);
-    return stat;
+    exit_func (stat);
   }
   
   // Optionen aus Übergabe erstellen, gibt STAT_SUCCESS oder Fehlerkonstannte zurück
   stat = parse_options (argc, argv, &phops, &frmops, &outops);
-  if (stat != STAT_SUCCESS) {
-    show_err_msg (stat);
-    return stat;
+  if (stat != STAT_SUCCESS) exit_func (stat);
+    
+  // Übergebene Namen zählen... gibt 0 zurück wenn Keine, sonst Anzahl 1...n
+  list.number_of_names = parser_count_names(argc, argv);
+  if (list.number_of_names == 0) {
+    stat = STAT_ERR_PARAM;
+    exit_func (stat);
   }
   
+  // Namensarray dimensionieren nach Anzahl... mit Liste verknüpfen
+  name_t names[list.number_of_names];
+  list.items = names;
+
   // Namensliste (list) füllen, Funktion gibt STAT_SUCCESS oder Fehlerkonstannte zurück 
-  stat = parse_nameslist (argc, argv, &list);
-  if (stat != STAT_SUCCESS) {
-    if (list.items != NULL) free (list.items);
-    show_err_msg (stat);
-    return stat;
-  }
+  stat = parser_fill_nameslist(argc, argv, &list);
+  if (stat != STAT_SUCCESS) exit_func (stat);
   
   // Anzeigeroutine anspringen, wenn mehrere gewählt
-  // gewinnt die, mit mehr Textausgabe... Funktionen liefern STAT_SUCCESS oder Fehlerkonstannte zurück
+  // gewinnt die, mit mehr Textausgabe... Funktion gibt Statuskonstannte für exit_func zurück
   if (outops.a == true) stat = printout_a (&list, &phops, &frmops);
   else if (outops.z == true) stat = printout_z (&list, &phops, &frmops);
   else if (outops.w == true) stat = printout_w (&list, &phops, &frmops);
   else stat = printout_c (&list, & phops, &frmops);
+  exit_func (stat);
   
-  // Ende mit oder ohne Fehler
-  if (stat != STAT_SUCCESS) show_err_msg(stat);
-  if (list.items != NULL) free (list.items);
-  return stat;
-  
+  // Wird nie erreicht
+  return 255;
 }
