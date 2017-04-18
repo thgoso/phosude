@@ -31,11 +31,9 @@ static const char Color_Table[NUMBER_OF_COLORS][16] = {
 static const char Color_Empty[]="";
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Private Funktionen
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Gibt Anzahl übergebener Namen zurück
 // Als Name zählt alles was nicht mit "-" beginnt
-static int parser_count_names (const int argc, char* argv[])
+int parser_count_names (const int argc, char* argv[])
 {
   int   excludes_cnt=0;
   int   name_cnt=0;
@@ -58,7 +56,7 @@ static int parser_count_names (const int argc, char* argv[])
 //            Pointer auf Namensliste
 // Rückgabe:  Statuskonstannte
 //            list.items gefüllt 
-static int parser_fill_nameslist (const int argc, char* argv[], nameslist_t *list)
+int parser_fill_nameslist (const int argc, char* argv[], nameslist_t *list)
 {
   char    *param;
   int     param_cnt;
@@ -122,29 +120,6 @@ static int parser_fill_nameslist (const int argc, char* argv[], nameslist_t *lis
   }
   
   return STAT_SUCCESS;
-}
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Öffentliche Funktionen
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Namensliste erzeugen
-// Übergabe:  CMD Args
-//            Pointer auf Namensliste list
-// Rückgabe:  Statuskonstannte
-//            list gefüllt
-int parse_nameslist (const int argc, char* argv[], nameslist_t *list)
-{
-  list->number_of_names = 0;
-  list->items = NULL;
-  
-  // Anzahl Namen aus Übergabe ermitteln, Ende wenn keine Namen überrgeben
-  // Speicher für items in Namesliste anfordern, Ende bei MEM Error
-  list->number_of_names = parser_count_names(argc, argv);
-  if (list->number_of_names == 0) return STAT_ERR_PARAM;
-  list->items = malloc ((list->number_of_names) * sizeof (name_t));
-  if (list->items == NULL) return STAT_ERR_MEM;
-  
-  // Namensliste füllen, Status durchreichen
-  return (parser_fill_nameslist (argc, argv, list));
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Optionen Parsen
