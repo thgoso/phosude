@@ -98,17 +98,17 @@ Jedes zusätzliche -l erhört die Zahl an möglichen Abweichungen. 2-3 -l sind O
 #### Name ausschließen mit _Name:
 Bei der Suche können **EXAKTE** Schreibweisen ausgeschlossen werden, wenn man ein _ voranstellt.
 ```
-phosude -K -P Müller_Mueller
+phosude -K -P Müller _Mueller
 ```
 Zeigt alle Namen die phonetisch ähnlich zu Müller sind, schließ aber die Schreibweise Mueller aus.
 Bei den verbotenen Namen wird zwischen Groß- und Kleinschreibung unterschieden. Das heißt:
 Gefunden werden Müller Möller Myller. NICHT aber ~~Mueller~~ jedoch mueller schon (weil Kleingeschrieben).
 ```
-phosude Müller_Müller
+phosude Müller _Müller
 ```
 Zeigt überhaupt nichts weil die phonetische Suche inaktiv ist.
 ```
-phosude -K Müller_Müller
+phosude -K Müller _Müller
 ```
 Zeigt alle phonetisch ähnlichen zu Müller, aber nicht die Schreibweise Müller selbst.
 
